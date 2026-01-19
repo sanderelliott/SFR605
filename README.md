@@ -7,7 +7,7 @@ This is the Github Repository for the University of Maine SFR 605 Course Modelin
 All exercises will be available at http://github.com/rabramoff and assume that you will be working from within the RStudio editor with git installed. This requires a few steps:
 
 0. Before installing RStudio, you'll want to make sure you have [installed R](http://cran.us.r-project.org/)
-1. RStudio can be downloaded for free from http://www.rstudio.com/
+1. RStudio can be downloaded for free [here](https://posit.co/download/rstudio-desktop/)
 2. You will need to install Git, which you can do by following the instructions at [RStudio Support - Version Control with Git and SVN](https://support.rstudio.com/hc/en-us/articles/200532077-Version-Control-with-Git-and-SVN).
 3. You will need to make sure RStudio knows where git is installed. 
   + In RStudio click on Tools > Global Options > Git/SVN
