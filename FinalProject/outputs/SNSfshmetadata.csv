@@ -1,0 +1,16 @@
+Detection_Data,Detection_Unit,Detection_Description
+Period,YYYY-MM-DD HH:MM:SS,Date when event occurs
+FishID,Identifier,ID code; One code per fish
+TagId,Identifier,Tag code; Identifies the tag being recorded
+pings,Integer,Number of times the tag pinged the receiver during the detection
+FirstTS,YYYY-MM-DD HH:MM:SS,Time and date of the beginning of the detection
+LastTS,YYYY-MM-DD HH:MM:SS,Time and date of the end of the detection
+Codespace,Identifier,Describes how the tag is coded
+IDCode,Identifier,Short code that differentiates the tag from other tags with the same codespace
+RxID,Identifier,Code that identifies the receiver
+DeploymentUID,Identifier,Code that corresponds with a specific deployment for said receiver
+Easting,Universal Transverse Mercator,Coordinates of receiver
+Northing,Universal Transverse Mercator,Coordinates of receiver
+RKM,Kilometers,UTM zone; in this case always 19
+UTMZone,Universal Transverse Mercator,Code that corresponds to certain sites
+SiteCode,Identifier,Date when event occurs
