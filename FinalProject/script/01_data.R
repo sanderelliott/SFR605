@@ -45,7 +45,7 @@ Fish_Data
 Fish_Unit <- c("Identifier", "Identifier", "YYYY-MM-DD HH:MM:SS", "Centimeters", "Centimeters", "Kilograms", 
                "Flag", "Flag", "Category")
 
-Fish_Description
+
 
 Fish_Description <- c("ID code; One code per fish", "Tag code; Identifies the tag being recorded", "Date that fish was captured",
                            "Length measured along the side of body from tip of nose to fork in caudal fin",
@@ -53,6 +53,7 @@ Fish_Description <- c("ID code; One code per fish", "Tag code; Identifies the ta
                            "Weight of fish", "1 if fish had been captured before", "1 if this is the first time fish had been captured"
 )
 
+Fish_Description
 
 Fish_metatable <- cbind(Fish_Data, Fish_Unit, Fish_Description)
 
@@ -63,7 +64,9 @@ write.csv(Detection_metatable, "FinalProject/outputs/SNSdetmetadata.csv", row.na
 write.csv(SNSfshcln, "FinalProject/outputs/SNSfsh.csv", row.names = FALSE)
 write.csv(Detection_metatable, "FinalProject/outputs/SNSfshmetadata.csv", row.names = FALSE)
 
-
+number_fish <- SNSfshcln %>% 
+  summarise(n_distinct(FishID))
+number_fish
 
 
 
