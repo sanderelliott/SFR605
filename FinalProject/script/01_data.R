@@ -59,10 +59,10 @@ Fish_metatable <- cbind(Fish_Data, Fish_Unit, Fish_Description)
 
 Fish_metatable
 
-write.csv(SNSdetcln, "FinalProject/outputs/SNSdet.csv", row.names = FALSE)
-write.csv(Detection_metatable, "FinalProject/outputs/SNSdetmetadata.csv", row.names = FALSE)
-write.csv(SNSfshcln, "FinalProject/outputs/SNSfsh.csv", row.names = FALSE)
-write.csv(Detection_metatable, "FinalProject/outputs/SNSfshmetadata.csv", row.names = FALSE)
+#write.csv(SNSdetcln, "FinalProject/outputs/SNSdet.csv", row.names = FALSE)
+#write.csv(Detection_metatable, "FinalProject/outputs/SNSdetmetadata.csv", row.names = FALSE)
+#write.csv(SNSfshcln, "FinalProject/outputs/SNSfsh.csv", row.names = FALSE)
+#write.csv(Detection_metatable, "FinalProject/outputs/SNSfshmetadata.csv", row.names = FALSE)
 
 number_fish <- SNSfshcln %>% 
   summarise(n_distinct(FishID))
