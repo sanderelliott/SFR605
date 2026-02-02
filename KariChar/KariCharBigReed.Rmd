@@ -17,14 +17,11 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-
-
 # Kari's Script
 
 ```{r}
 # note - the top temp logger only took one point of data on the first day
 #        so I didn't include it
-getwd() ## Make sure working directory all good SE
 
 hobo_2 <- read.csv("10040750(2nd_down) - 10040750(2nd_down).csv")
 hobo_3 <- read.csv("10040752_0(3rd_down) - 10040752_0(3rd_down).csv")
@@ -59,24 +56,32 @@ head(br)
 unique(br$depth)
 unique(br$hobo_num)
 ```
+
 # Look at some stuff
 
-## Detection by month
+## Make a plot that shows temperature by month, year, and HOBO
+
 ```{r}
 class(br$Date_Time)
 
-monthbr <- br %>% 
+datebr <- br %>% 
   mutate(Date_Time = mdy_hm(Date_Time),
-         month = month(Date_Time),
-         year = year(Date_Time))
+         month = month(Date_Time), ## Get Month
+         year = year(Date_Time)) %>%  ## Get Year
+  drop_na(Temp_C) ## Drop rows with no temp readings
 
-start <- min(monthbr$Date_Time)
-end <- max(monthbr$Date_Time) 
+start <- min(datebr$Date_Time) ## Get a start Date
+end <- max(datebr$Date_Time) ## End Date
 
-ggplot(monthbr, aes(x = factor(month), y = Temp_C)) +
+ggplot(datebr, aes(x = factor(month), y = Temp_C)) + 
+  ## Make month a factor so it bins
   geom_jitter(aes(color = factor(year)), shape = 21, fill = NA, na.rm = TRUE) +
-  geom_boxplot(color = "grey", fill = NA, outlier.shape = NA,
+  ## Display points with small amount of random variation along x axis
+  geom_boxplot(fill = NA, outlier.shape = NA,
                na.rm = TRUE) +
+  scale_color_manual(
+    name = "Year", 
+    values = c("2011" = "orange","2012" = "green", "2013" = "blue")) +
    labs(
     title = "HOBO Temperature Readings by Month",
     subtitle = paste("Big Reed Pond, ME from", paste(start, end, sep = " to ")),
@@ -84,55 +89,87 @@ ggplot(monthbr, aes(x = factor(month), y = Temp_C)) +
     y = "Temperature",
     color = "Year"
   ) +
-  facet_wrap(factor(hobo_num)) +
+  facet_wrap(~hobo_num, ## separate plots by HOBO number
+             nrow = 1,
+             labeller = labeller(hobo_num = function(x) paste0("HOBO #", x))) +
   theme_classic()
  
 ```
 
-HOBOs 3-6 have interesting temperature distributions for June
+HOBOs 3-6 have interesting temperature distributions for June. There seems to be way higher temperatures in 2013. Almost looks like bimodal distribution but will have to check. Otherwise, the full year (2012), looks like a normal seasonal temperature fluctuation. 
 
-
-## Make a plot ot look at june by year
+## Check out distributions for June and compare to overall distribution. 
 
 ```{r}
-monthbr6 <- br %>% 
-  mutate(Date_Time = mdy_hm(Date_Time),
-         month = month(Date_Time),
-         year = year(Date_Time)) %>% 
-  filter(month == 6)
+junebr <- datebr %>% 
+  filter(month == 6) ## Just looking at June
 
-
-ggplot(monthbr6, aes(x = factor(year), y = Temp_C)) +
-  geom_jitter(aes(color = factor(year)), shape = 21, fill = NA, na.rm = TRUE) +
-  geom_boxplot(color = "black", fill = NA, outlier.shape = NA,
-               na.rm = TRUE) +
-   labs(
-    title = "HOBO Temperature Readings in June By Year",
-    subtitle = paste("Big Reed Pond, ME from", paste(start, end, sep = " to ")),
-    y = "Temperature",
-    color = "Year"
+ggplot(junebr, aes(x = Temp_C, fill = factor(year))) +
+  geom_histogram() + 
+  scale_fill_manual(name = "Year", 
+                    values = c("2012" = "green", "2013" = "blue")) +
+  theme_classic() +
+  labs(
+    title = "Temperature Readings from Big Reed Pond, ME in June",
+    subtitle = "From 2012 to 2013",
+    x = "Temperature",
+    y = "Frequency"
   ) +
-  facet_wrap(~ hobo_num) +
-  theme_classic()
+  facet_wrap(~year) ## separate plots by year
+
+## Make a separate plot without breaking apart year or filtering month
+
+ggplot(datebr, aes(x = Temp_C)) +
+  geom_histogram() +
+  theme_classic() +
+  labs(
+    title = "Temperature Readings from Big Reed Pond, ME",
+    subtitle =  paste("Big Reed Pond, ME from", 
+                      paste(start, end, sep = " to ")),
+    x = "Temperature",
+    y = "Frequency"
+  ) 
+
 ```
 
+In June, 2013 has a more normal distribution, but 2012 more closely resembles the overall distribution of the data. It is worth looking closer at the differences between 2012 and 2013. 2012 is the only full year in the data set. Year will likely have a large effect on how the analysis is conducted. 
+
+## Make Table to Summarise Depth, HOBO #, and Temperature.
+
+```{r}
+brsumstat  <- datebr %>% 
+  group_by(depth, hobo_num) %>% 
+  summarise(Low_Temp = min(Temp_C),
+            High_Temp =  max(Temp_C),
+            AVG_Temp = mean(Temp_C),
+            SE_Temp = sd(Temp_C)/sqrt(n())
+            )
+
+brsumstat
+```
+
+It looks like the average temperature decreases with lower depths along with the variation of temperature. Interestingly, the high temperature seems to vary by depth, alternating between high and low. The low temperature increases with depth. It is worthwhile to see how this table changes when year is counted for. 
+
+## Just one full year (2012)
+
+```{r}
+br2012sumstat  <- datebr %>% 
+  filter(year == 2012) %>% ## just 2012
+  group_by(depth, hobo_num) %>% 
+  summarise(Low_Temp = min(Temp_C),
+            High_Temp =  max(Temp_C),
+            AVG_Temp = mean(Temp_C),
+            SE_Temp = sd(Temp_C)/sqrt(n())
+            )
+
+br2012sumstat
+```
+
+Looking at just 2012, the fluctuation in high temperature goes away and instead decreases with lower depths. The values for low temperature, average temperature, and variation in temperature change, but the same trends remain. 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+*AI Statement:*
+*Microsoft CoPilot was used to find geom_jitter which helped me to overlay points on a box plot without them all being on one line. I found this useful and will use this function more in the future. CoPilot also helped me troubleshoot some issues I was having with facet_wrap(). I had the right function but did not know to use a ~ before the facet or how to use labeller() inside facet_wrap().*
 
 
 
