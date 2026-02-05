@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 5 - More Maximum Likelihood"
+title: "Tutorial 6 - More Maximum Likelihood"
 author: "SFR605"
 output: html_document
 ---

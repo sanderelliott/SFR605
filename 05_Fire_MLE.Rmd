@@ -1,10 +1,10 @@
 ---
-title: "Tutorial 4 - Maximum Likelihood"
+title: "Tutorial 5 - Maximum Likelihood"
 author: "SFR605"
 output: html_document
 ---
 
-In this exercise we will be looking at ways to implement Maximum Likelihood analyses in R, making use of both analytical solutions and numerical optimization.  This lab will present two `case study` examples and then ask you to work through a third example on your own.  This exercise will require you to come up with your own R code much more than the previous two, therefore you are strongly encourage to look at the assignment at the end before you start so that you know what you will be asked to do.  You will have all the tools you need to solve the assignment after the first case study.
+In this exercise we will be looking at ways to implement Maximum Likelihood analyses in R, making use of both analytical solutions and numerical optimization.  This tutorial will present two `case study` examples and then ask you to work through a third example on your own.  This exercise will require you to come up with your own R code much more than the previous two, therefore you are strongly encourage to look at the assignment at the end before you start so that you know what you will be asked to do.  You will have all the tools you need to solve the assignment after the first case study.
 
 #Load needed libraries
 ```{r}
@@ -13,8 +13,7 @@ library(here)
 
 ## Case study 1: Survival Analysis
 
-Consider the example presented in lecture and in Section 3.2 of "Models for ecological data : an introduction" by
-Clark, James S (Chapter 3: Point Estimation: Maximum Likelihood and the Method of Moments; available online at Fogler Library and accessible from our Brightspace Resources tab) where the survival of a population of plants is being followed by an industrious graduate student conducting a drought experiment.  The goal of this analysis is to estimate the mortality rate, $\rho$.  The data records the day that each plant died, which has to be positive, and if we assume a constant mortality rate then the underlying process should conform to an exponential distribution:
+Consider the example presented in lecture and in Section 3.2 of "Models for ecological data : an introduction" by Clark, James S (Chapter 3: Point Estimation: Maximum Likelihood and the Method of Moments; available online at Fogler Library and accessible from our Brightspace Resources tab) where the survival of a population of plants is being followed by an industrious graduate student conducting a drought experiment. The goal of this analysis is to estimate the mortality rate, $\rho$.  The data records the day that each plant died, which has to be positive, and if we assume a constant mortality rate then the underlying process should conform to an exponential distribution:
  
 $$L = Pr(a \vert \rho) \propto Exp(a \vert \rho) = \prod \rho \, exp(-\rho a_i)$$
 
@@ -31,7 +30,7 @@ n <- length(dat)
 n
 ```
 
-This problem has an analytical solution for the Maximum Likelihood Estimator (MLE), which we solved for earlier.  In order to illustrate the different ways to approach this problem we will solve the problem both analytically and numerically.  From eqn 3.4 we know the MLE of $\rho$ to be
+This problem has an analytical solution for the Maximum Likelihood Estimator (MLE), which we solved for earlier.  In order to illustrate the different ways to approach this problem we will solve the problem both analytically and numerically.  From lecture and from Eqn 3.4 in Clark Ch. 3 we know the MLE of $\rho$ to be
 
 ```{r}
 ##Analytical solution
@@ -77,7 +76,7 @@ plot(rseq,exp(-lkexp(rseq,dat)),main="Likelihood",xlab="rho",ylab="L",type='l')
 abline(v=rho_mle,lty=2)
 ```
 
-This approach to finding the likelihood and plotting the likelihood profile presumes that we've already solved the analytical solution for the log-likelihood.  If we want to avoid deriving that solution we can also express the log-likelihood in terms of the PDFs that we studied in lab last week.  We're modeling mortality rate based on an exponential distribution, so we can also find the likelihood using the `dexp` function.  Remember that in this context we are calculating the likelihood by *holding the data constant and varying the value of the parameter*.  In this case even though we're using the density function, the plot of the function versus the parameter is no longer a density, as it would be if we held the parameters constant and looked at the probability of observing the data (i.e. the data on the x-axis).  As an example, if we wanted to find the likelihood of the first data-point conditional on the MLE for $\rho$ we could write
+This approach to finding the likelihood and plotting the likelihood profile presumes that we've already solved the analytical solution for the log-likelihood.  If we want to avoid deriving that solution we can also express the log-likelihood in terms of the PDFs that we studied in lab last week.  We're modeling mortality rate based on an exponential distribution, so we can also find the likelihood using the `dexp` function. Remember that in this context we are calculating the likelihood by *holding the data constant and varying the value of the parameter*.  In this case even though we're using the density function, the plot of the function versus the parameter is no longer a density, as it would be if we held the parameters constant and looked at the probability of observing the data (i.e. the data on the x-axis).  As an example, if we wanted to find the likelihood of the first data-point conditional on the MLE for $\rho$ we could write
  
 ```{r}
 dexp(dat[1],rho_mle)
@@ -108,7 +107,7 @@ lkexp2 <- function(rho,dat){
 lkexp2(rho_mle,dat)
 ```
 
-One important difference between lkexp2 and the original lkexp is that lkexp2 only makes sense if it’s passed a single value for $\rho$, while with lkexp we could pass a whole vector of rhos, like rseq, in order to plot the likelihood.  If one passed a vector of rhos to lkexp2 then dexp would be applied to a vector of rhos and a vector of data simultaneously and by default R will compute the likelihood of the first data point given the first $\rho$, the second data point given the second $\rho$, etc. which is NOT what we're looking for. Fortunately R has a simple function -- `sapply -- that allows you to apply a function to each value in a vector, which IS what we want.
+One important difference between lkexp2 and the original lkexp is that lkexp2 only makes sense if it’s passed a single value for $\rho$, while with lkexp we could pass a whole vector of rhos, like rseq, in order to plot the likelihood.  If one passed a vector of rhos to lkexp2 then dexp would be applied to a vector of rhos and a vector of data simultaneously and by default R will compute the likelihood of the first data point given the first $\rho$, the second data point given the second $\rho$, etc. which is NOT what we're looking for.  Fortunately R has a simple function -- `sapply -- that allows you to apply a function to each value in a vector, which IS what we want.
 
 ```{r}
 llk2 <- sapply(rseq,lkexp2,dat=dat)
@@ -156,7 +155,7 @@ fit2
 
 The output from `nlm` is mostly the same as for `optimize` but it includes a few other pieces of information.  The `gradient` is the numerical estimate of the slope at the numerical optimum (remember that at the optimum the slope should be zero).  The `code` indicates under what conditions the algorithm stopped.  Generally a 1 or 2 indicates that `nlm` is confident that it found a minimum, while values of 3-5 indicate failure for some reason.  Finally `iterations` reports the number of loops the algorithm performed in finding the solution.
   An important difference between `nlm` and `optimize` is that `optimize` is designed to work for 1-D problems (i.e. models with one parameter), while `nlm` will work on multi-parameter models.  In the second case study we will also introduce a third optimization function, `optim` that also works with multivariate problems. You can visit the CRAN Optimization Task View to see many more options https://cran.r-project.org/web/views/Optimization.html. Most of the time it doesn't matter which optimization routine you use, though they each work slightly differently, so if one approach fails it can be useful to check another.
-	As discussed in lecture, remember that all numerical optimization algorithms can get stuck in local minima.  For this reason it is good practice to run such routines multiple times starting from multiple different initial locations to ensure they are all converging to the same point.  Obviously this does not guarantee that they are not all converging to the same local minima but it does reduce the risk, especially if the initial conditions are well distributed in parameter space rather than being too close together. Different search methods have different sensitivities to local minima so if you suspect this is a problem you'll want to look up different methods and choose your algorithm carefully.Finally, numerical methods can also run into trouble if the surface is not smooth and continuous (fortunately most likelihoods meet these criteria).
+	Remember that all numerical optimization algorithms can get stuck in local minima.  For this reason it is good practice to run such routines multiple times starting from multiple different initial locations to ensure they are all converging to the same point.  Obviously this does not guarantee that they are not all converging to the same local minima but it does reduce the risk, especially if the initial conditions are well distributed in parameter space rather than being too close together. Different search methods have different sensitivities to local minima so if you suspect this is a problem you'll want to look up different methods and choose your algorithm carefully.Finally, numerical methods can also run into trouble if the surface is not smooth and continuous (fortunately most likelihoods meet these criteria).
 
 ### Questions
 
@@ -184,7 +183,7 @@ lines(age,dweibull(age,.5,50),col="green")
 
 ```
 3) Does increasing the `shape` parameter cause fire risk to increase or decrease with age? Note that risk (or more formally, hazard) is the probability of an event at a point in time conditional on having already survived to that time (e.g., the exponential PDF, which is monotonically decreasing, has constant hazard). If you can't figure this out from the dweibull, try looking up (e.g. Wikipedia) and plotting the equivalent Weibull hazard function.
-4) Extra Credit: Plot the CDF of these 3 distributions. What is significant about the scale parameter? What is the analytical solution for the CDF at this point? Add these lines to your CDF plot.
+4) Optional: Plot the CDF of these 3 distributions. What is significant about the scale parameter? What is the analytical solution for the CDF at this point? Add these lines to your CDF plot.
 ```
 
 Let’s begin by loading up the data set and take a quick look at it.  The data are actually stored as the number of times each return interval was observed, so our first step is to use `rep` to reconstruct the observations
@@ -271,8 +270,7 @@ n = length(surv)
 y = sum(surv)
 ```
 
-We again want to estimate the per-capita daily mortality rate, $\rho$, but this time we will instead use the combined binomal/exponential model covered in lecture and in Section 3.4 of "Models for ecological data : an introduction" by
-Clark, James S.
+We again want to estimate the per-capita daily mortality rate, $\rho$, but this time we will instead use the combined binomal/exponential model covered in lecture and in Section 3.4 of "Models for ecological data : an introduction" by Clark, James S.
 
 As a reminder we start with the binomial model expressed in terms of $\theta$, the probability of surviving to the census at day 20
  
@@ -284,14 +282,12 @@ $$L = Binom(y \vert N, \rho) \propto e^{-\rho T y} \left( 1-e^{-\rho T} \right)^
 
 Apply one of the **numerical optimization methods** you used above in order to estimate $\rho$.
 
-## Questions
+### Questions
 
 ```
 6) Please include the following in your answer:
-*  R code
 *  Numerical estimate of rho
 *  Negative log likelihood profile
 *  Answer the following question:  If we wanted to test the assumption that mortality rate was constant in time, which of the two data sets could we use and what model would we fit?
-7) Extra Credit: A plot of the exponential PDF with two curves, one based on the Exponential model from the start of this lab and the second from the Binomial/Exponential fit you just found 
+7) Optional: A plot of the exponential PDF with two curves, one based on the Exponential model from the start of this lab and the second from the Binomial/Exponential fit you just found 
 ```
-
