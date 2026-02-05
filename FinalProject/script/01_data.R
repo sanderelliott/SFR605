@@ -4,6 +4,7 @@ library(glatos)
 library(sf)
 library(raster) 
 library(tidyverse)
+library(rosm)
 
 
 getwd()
@@ -112,6 +113,13 @@ ggplot() +
   coord_sf(crs = 3857) +
   theme_minimal() +
   labs(title = "Detection Locations")
+
+
+
+
+
+
+
 
 
 
