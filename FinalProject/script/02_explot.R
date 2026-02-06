@@ -80,7 +80,9 @@ ggplot(glat_sf, aes(x=detection_timestamp_utc, y=transmitter_id, color=array))+
 
 ## Create Events ----
 
-glat_events <- detection_events(glat_sf, location_col = "array")
+glat_events <- detection_events(glat_sf, location_col = "array") %>% 
+  mutate(m_leave = month(last_detection),
+         d_leave = yday(last_detection))
 
 penob_events <- glat_events %>%
   arrange(animal_id, last_detection) %>% 
@@ -92,9 +94,7 @@ penob_events <- glat_events %>%
 
 
 depart_m <- penob_events %>% 
-  filter(location == "penob_riv") %>% 
-  mutate(m_leave = month(last_detection),
-         d_leave = yday(last_detection))
+  filter(location == "penob_riv") 
 
 ggplot(depart_m, aes(x = m_leave)) +
   geom_histogram(bins = 12, boundary = 0.5) +
@@ -144,4 +144,11 @@ ggplot(depart_m, aes(x = d_leave)) +
     y = "Density"
   )
 
+## Abacus plot of animals in penob events
+
+penob_cyc <- penob_events %>% 
+  filter(animal_id %in% depart_m$animal_id)
+
+ggplot(penob_cyc, aes(x=last_detection, y=animal_id, color=location))+
+  geom_point()+xlab("Detection Timestamp") + ylab("Transmitter ID")
 

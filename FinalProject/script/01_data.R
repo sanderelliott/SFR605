@@ -77,44 +77,7 @@ number_fish
 glimpse(SNSdetcln)
 
 
-detglat <- SNSdetcln %>% 
-  mutate(detection_timestamp_utc = as.POSIXct(LastTS),
-         transmitter_id = as.character(IDCode),
-         transmitter_codespace = as.character(TagId),
-         receiver_sn = RxID) %>% 
-  filter(! is.na(Easting)) %>% 
-  st_as_sf(coords = c("Easting", "Northing"), crs = 26919) %>%   # NAD83 / UTM zone 19N
-  st_transform(4269) %>%
-  mutate(
-    deploy_long = st_coordinates(.)[, 1],
-    deploy_lat = st_coordinates(.)[, 2],
-    animal_id = FishID) %>%
-  st_drop_geometry() %>% 
-  filter(deploy_lat < 45.1)
 
-glimpse(detglat)
-
-
-det_sf <- detglat %>%
-  st_as_sf(coords = c("deploy_long", "deploy_lat"), crs = 4326)
-
-bb <- st_bbox(det_sf)
-
-osm <- osm.raster(bb, type = "cartolight")
-
-osm_df <- as.data.frame(osm, xy = TRUE)
-
-det_sf_3857 <- st_transform(det_sf, 3857)
-
-ggplot() +
-  geom_raster(data = osm_df, aes(x = x, y = y, fill = layer.1)) +
-  scale_fill_gradient(low = "grey90", high = "grey60") +
-  geom_sf(data = det_sf_3857, color = "red", size = 0.5) +
-  coord_sf(crs = 3857) +
-  theme_classic() +
-  labs(title = "Detection Locations",
-       x = "Longitude",
-       y = "Latitude")
 
 
 
