@@ -76,7 +76,7 @@ number_fish
 
 glimpse(SNSdetcln)
 
-<<<<<<< HEAD
+
 detglat <- SNSdetcln %>% 
   mutate(detection_timestamp_utc = as.POSIXct(LastTS),
          transmitter_id = as.character(IDCode),
@@ -118,8 +118,7 @@ ggplot() +
 
 
 
-=======
->>>>>>> c5c751a2dbae17d2d1edfcddf2fd101c84997f21
+
 
 
 
