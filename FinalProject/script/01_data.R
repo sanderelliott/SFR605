@@ -111,8 +111,10 @@ ggplot() +
   scale_fill_gradient(low = "grey90", high = "grey60") +
   geom_sf(data = det_sf_3857, color = "red", size = 0.5) +
   coord_sf(crs = 3857) +
-  theme_minimal() +
-  labs(title = "Detection Locations")
+  theme_classic() +
+  labs(title = "Detection Locations",
+       x = "Longitude",
+       y = "Latitude")
 
 
 
