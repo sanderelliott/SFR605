@@ -94,7 +94,8 @@ penob_events <- glat_events %>%
 
 
 depart_m <- penob_events %>% 
-  filter(location == "penob_riv") 
+  filter(location == "penob_riv") %>% 
+  mutate(m_leave = factor(m_leave, levels = 1:12, labels = month.abb))
 
 ggplot(depart_m, aes(x = m_leave)) +
   geom_histogram(bins = 12, boundary = 0.5) +
