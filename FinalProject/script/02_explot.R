@@ -145,32 +145,6 @@ ggplot(depart_m, aes(x = d_leave)) +
     y = "Density"
   )
 
-<<<<<<< HEAD
-## Look at late departures
-
-late_d <- depart_m %>% 
-  filter(d_leave > 230) 
-
-late_an <- glat_events %>% 
-  filter(animal_id %in% late_d$animal_id)
-
-late_d[,"animal_id"]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
 ## Abacus plot of animals in penob events
 
 penob_cyc <- penob_events %>% 
@@ -178,5 +152,5 @@ penob_cyc <- penob_events %>%
 
 ggplot(penob_cyc, aes(x=last_detection, y=animal_id, color=location))+
   geom_point()+xlab("Detection Timestamp") + ylab("Transmitter ID")
->>>>>>> 439d0f6b037b9e92267dad904074ec86690f549e
+
 
