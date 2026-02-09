@@ -144,4 +144,28 @@ ggplot(depart_m, aes(x = d_leave)) +
     y = "Density"
   )
 
+## Look at late departures
+
+late_d <- depart_m %>% 
+  filter(d_leave > 230) 
+
+late_an <- glat_events %>% 
+  filter(animal_id %in% late_d$animal_id)
+
+late_d[,"animal_id"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
