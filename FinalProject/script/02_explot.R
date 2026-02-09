@@ -82,6 +82,7 @@ ggplot(glat_sf, aes(x=detection_timestamp_utc, y=transmitter_id, color=array))+
 
 glat_events <- detection_events(glat_sf, location_col = "array") %>% 
   mutate(m_leave = month(last_detection),
+         y_leave = year(last_detection), 
          d_leave = yday(last_detection))
 
 penob_events <- glat_events %>%
@@ -97,19 +98,6 @@ depart_m <- penob_events %>%
   filter(location == "penob_riv") %>% 
   mutate(m_leave = factor(m_leave, levels = 1:12, labels = month.abb))
 
-ggplot(depart_m, aes(x = m_leave)) +
-  geom_histogram(bins = 12, boundary = 0.5) +
-  scale_x_continuous(
-    breaks = 1:12,
-    labels = month.abb) +
-  coord_cartesian(xlim = c(1, 12)) +
-  theme_classic() +
-  labs(
-    title = "Departures by Month",
-    subtitle = "Shortnose Sturgeon from Penobscot River",
-    x = "Month",
-    y = "Frequency")
-
 
 ggplot(depart_m, aes(x = d_leave)) +
   geom_histogram(bins = 52, boundary = 0.5) +
@@ -121,6 +109,32 @@ ggplot(depart_m, aes(x = d_leave)) +
     x = "Week",
     y = "Frequency")
 
+ggplot(depart_m, aes(x = d_leave)) +
+  geom_histogram(bins = 52, boundary = 0.5) +
+  coord_cartesian(xlim = c(1, 365)) +
+  theme_classic() +
+  facet_wrap(~y_leave) +
+  labs(
+    title = "Departures by Week Over Multiple Years",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Week",
+    y = "Frequency")
+
+ggplot(depart_m, aes(x = d_leave, fill = factor(y_leave))) +
+  geom_histogram(
+    bins = 52,
+    boundary = 0.5,
+    position = "stack" 
+  ) +
+  coord_cartesian(xlim = c(1, 365)) +
+  theme_classic() +
+  labs(
+    title = "Departures by Week Over Multiple Years",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Julian Day",
+    y = "Frequency",
+    fill = "Year"
+  )
 
 ggplot(depart_m, aes(x = d_leave)) +
   geom_density(fill = "steelblue", alpha = 0.4) +
