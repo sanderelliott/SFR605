@@ -243,3 +243,150 @@ Create figures analogous to Task 3 that show the fits for the full model, the am
 
 1. Does elevated CO2 have an effect on fecundity? (Provide explanation for your answer).
 2. Is this effect simply due to there being larger trees in the elevated plots, or does CO2 affect the maturation rate and/or the fecundity of trees (i.e. the cone production at a given tree size)?  If there is an effect, in what direction is it?
+
+#Confidence and Predictive Intervals
+
+Next, let's spend a bit of time applying the frequentist tools for generating confidence and predictive intervals and for selecting among models. For the model we just estimated, let us now estimate confidence intervals on the model parameters, as well as model confidence and predictive intervals, using bootstrap methods.  We will also compare the results of the LRT with model selection using AIC.
+
+Recall that we have now fit the pine cone count data to the whole data set (out), to just the ambient CO2 data (out.amb) and to just the elevated CO2 data (out.elev).
+
+###  AIC vs Likelihood Ratio Test
+
+Begin by calculating the AIC for the two models.  We had previously stored the negative log likelihoods in a vector named lnL that contained the values for (combined, amb, elev).  To estimate AIC we need to know the total number of parameters for each model.  For the model that analyzes the combined data there are 3 parameters, a0, b0, and b1.  Because we did not use a Normal likelihood there's not an additional variance parameter that needs to be estimated.  The model that treats ambient and elevated CO2 as separate treatments thus has 6 parameters.  Recall that the formula for AIC is $$AIC = -2 \ln(L) + k \cdot n_{par}$$
+
+Where:
+* $\ln(L)$ is the log-likelihood of the fitted model.
+* $n_{par}$ is the number of parameters.
+* $k = 2$ for the standard AIC.
+
+#### Task 6
+Compare the AICs for the two models, interpret the results for this test, and compare with the results from the LRT previously performed.
+
+## Bootstrapped Interval Estimates
+
+Next, let's calculate the bootstrap confidence and predictive intervals.  This begins by setting up variables that control the sampling and storage for the output. Keep in mind that bootstrapping and MCMC are not the same thing. Each treats the data and the parameters differently – in the bootstrap we're generating random DATA while in MCMC the data are fixed but the parameters are random. This will make more sense when we cover MCMC.
+
+**For your report, make sure to set nboot to an appropriate number of replicates**
+ 
+```{r}
+## bootstrap
+nboot <- 100  			## number of bootstrap samples
+npred <- 31				## number of X values you predict for
+dseq  <- seq(0,30,length=npred)		## diameter sequence
+mle   <- matrix(NA,nrow=nboot,ncol=3)	## storage for parameter estimates
+conf.mat  <- matrix(NA,nrow=nboot,ncol=npred)	## storage for maturation CI
+conf.cone <- matrix(NA,nrow=nboot,ncol=npred)	## storage for fecundity CI
+pred.mat   <- matrix(NA,nrow=nboot,ncol=npred)	## storage for predictive maturation
+pred.cone <- matrix(NA,nrow=nboot,ncol=npred)	## storage for predictive fecundity
+```
+
+Next we'll specify the data set that we'll be sampling from.  In this case we'll begin by constructing interval estimates for the ambient CO2 data
+
+```{r}
+## Ambient
+dia.t   <- b$diam[tmt=="AMB"]   ## tree diameters
+cones.t <- (b$cones > 0)         ## whether cones are present
+cones.t <- cones[tmt=="AMB"]
+ncone.t <- b$cones[tmt=="AMB"]    ## number of cones
+```
+
+Next is the main bootstrap loop.  There are a number of steps to this process as we'll be generating both the parameters CI and the model CI and PI in one large loop.  In the first part we define the resampled data set, making sure to sample so that we keep all xy pairs of data together.  Next we'll fit the model to the resampled data using numerical optimization and store those parameters.  After that we'll calculate the mean model prediction given the most recent set of parameters in order to calculate the model confidence interval.  Finally we'll simulate pseudodata from the model to calculate the model predictive interval.
+
+```{r,echo=FALSE}
+likfit = function(param,dia,ncone){
+  a0 = param[1]
+  b0 = param[2]
+  b1 = param[3]
+  cones = ncone > 0
+
+  ## trees with cones
+  dia.cone  = dia[cones > 0]                ##find just the trees with cones
+  g.cone = a0 * dia.cone^2			## Fecundity fnc - g(x)
+  theta.cone    = pnorm(dia.cone,b0,b1,log.p=TRUE) 	## maturation probit
+  prob.cone = theta.cone + dpois(ncone[cones],g.cone,log=TRUE)
+  
+  ##trees with zero counts 
+  dia.zero  = dia[cones == 0]
+  g.zero = a0 * dia.zero^2
+  theta.zero    = pnorm(dia.zero,b0,b1)   	##maturation probit
+  prob.zero = log((1-theta.zero) + theta.zero*dpois(0,g.zero))
+
+  return(-sum(prob.cone,prob.zero))
+}
+```
+ 
+Don't forget to update the variable `param` so that it contains the previous best-fit parameters for the ambient CO2 model.
+
+```{r}
+for(i in 1:nboot){
+  if(i%%100 == 0) print(i)  					## progress indicator
+  samp <- sample(length(dia.t),replace=T)		##Sample row indices 
+  out.boot <- optim(param,likfit,method="L-BFGS-B",	## fit model to sample
+                    lower=c(0.001,10,1),upper=c(1,30,30),dia=dia.t[samp],ncone=ncone.t[samp])
+  mle[i,] <- out.boot$par					## store parameters
+}
+```
+
+Once we've generated the bootstrap sample we'll want to begin by looking at the parameter level estimates.  Lets first calculate the confidence intervals for each parameter using “quantile” and then use a pairs plot to assess parameter correlations.
+ 
+```{r}
+colnames(mle) = c("a0","b0","b1")
+a0.ci <- quantile(mle[,1],c(0.025,0.975))
+b0.ci <- quantile(mle[,2],c(0.025,0.975))
+b1.ci <- quantile(mle[,3],c(0.025,0.975))
+pairs(mle)
+```
+
+Next, construct density plots for each of these parameters and add both the MLE and the confidence intervals.
+ 
+```{r}
+## density plots
+plot(density(mle[,1],width=0.005),type='l',xlim=c(0,0.05),ylim=c(0,120))
+abline(v=a0.ci,lty=2)
+abline(v=a0[2])
+```
+
+##### Task 7
+- Generate density and CI plots for all 3 model parameters.  
+- Include a table of the three parameter estimates, standard errors, and CI.
+- Use `cov` to generate an estimate of the parameter covariance matric 
+
+##### Task 8
+Repeat this analysis but using the Fisher Information method. To do so, repeat the numerical optimization of the MLE *once* to the original data (not a full bootstrap) but including the argument `hessian = TRUE` when calling `optim`. Invert the Hessian to generate the covariance matrix. Construct confidence intervals for each parameter using the variances on the diagnonal and report in a table. Compare this covariance matrix and associated parameter confidence interval estimates to Task 2.
+
+### Model Intervals
+
+Let’s now move on to constructing the model confidence intervals and predictive intervals.  Since we have two process models for this analysis we'll start with the intervals on the maturation model. First, we'll want to generate the predictions
+
+```{r}
+for(i in 1:nboot){
+  conf.mat[i,]  <- pnorm(dseq,mle[i,2],mle[i,3])        ## store model | parms
+  pred.mat[i,]  <- rbinom(npred,1,conf.mat[i,])  
+}
+```
+
+Next we'll want to generate the CI and PI from the full distribution of predictions
+
+```{r}
+ci.mat <- apply(conf.mat,2,quantile,c(0.025,0.5,0.975))
+pi.mat <- apply(pred.mat,2,quantile,c(0.025,0.975)) 
+```
+
+Finally, lets plot the model confidence and predictive intervals and compare them to the data
+ 
+```{r}
+## maturation plot
+cones = b$cones > 0
+plot(b$diam,b$cones,col = as.factor(b$tmt),ylim=c(0,1))
+lines(dseq,ci.mat[2,],col=2,lwd=3)   ## median model
+lines(dseq,ci.mat[1,],col=2,lty=2,lwd=3)	## 95% CI
+lines(dseq,ci.mat[3,],col=2,lty=2,lwd=3)
+lines(dseq,pi.mat[1,],col=3,lty=2,lwd=3)	## 95% PI
+lines(dseq,pi.mat[2,],col=3,lty=2,lwd=3)
+```
+
+###### Task 9
+Generate and plot the confidence and predictive interval for the full fecundity process model (which combines both maturation and fecundity|maturation). Include the observed data in the plot and interpret both this plot and the maturation plot in your answer.
+
+###### Task 10
+Repeat the bootstrap analysis for the elevated CO2 treatment.  Include the figures and tables from tasks 2 & 3 for the elevated plots as well as a final plot that compares the model confidence intervals between the elevated and ambient data on one figure
