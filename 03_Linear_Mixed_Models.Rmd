@@ -116,25 +116,29 @@ lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
 Now develop a linear mixed model that allows the slopes of the relationship between trophic position and body length to vary by lake and species. Note: You don't have to evaluate how well the model works or fix any warnings, just show me how you would code it.
 
 ```{r}
-lmer(Z_TP ~ Z_Length + (1 | Lake:Fish_Species),
+lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
      data = fish.data, REML = TRUE)
 ```
 
 
 #Question 3
 Next let's make a list of 7 different mixed model structures that could be compared to a basic linear model. Remember to set REML = FALSE in order to compare your new models with the basic linear model where estimation method = ML. Use the naming convention M1 - M8.
-```
+
+```{r}
 #Linear model
 M0 <- lm(Z_TP ~ Z_Length, data = fish.data)
-M1 # Full model with varying intercepts #Hint: you already defined this above
-M2 # Full model with varying intercepts and slopes #Hint: you already defined this above
+M1 <- lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
+     data = fish.data, REML = TRUE)# Full model with varying intercepts #Hint: you already defined this above
+M2 <- lmer(Z_TP ~ Z_Length + (1 | Lake:Fish_Species),
+     data = fish.data, REML = TRUE)# Full model with varying intercepts and slopes #Hint: you already defined this above
 M3 # No Lake, varying intercepts only
 M4 # No Species, varying intercepts only
 M5 # No Lake, varying intercepts and slopes
 M6 # No Species, varying intercepts and slopes
 M7 # Full model with varying intercepts and slopes only varying by lake
 M8 # Full model with varying intercepts and slopes only varying by species
-```     
+```
+   
 
 Now that you have defined your models, lets estimate the AICc value for the first model using the package MuMin.
 
