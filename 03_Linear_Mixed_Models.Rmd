@@ -1,7 +1,9 @@
 ---
 title: "Tutorial 3 - Linear Mixed Models.Rmd"
 author: "SFR605"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 For this tutorial, we will need to install and load some packages using the `library` function. 
@@ -256,8 +258,44 @@ Color your data points by species in plot 1 and by lake in plot 2. Plot a regres
 Hint: If using ggplot, you can add lines using `geom_abline` and define the intercept and slope from a table of your extracted coefficients.
 
 ```{r}
+# Model 8 Lake
+library(tidyverse)
+c <- coef(M8)
+c
+
+d <- c$Lake %>% 
+  tibble::rownames_to_column("Lake")
+d
+
+head(d)
+head(fish.data)
+ggplot(data = fish.data, aes(x = Z_Length, y = Z_TP, colour = Lake)) +
+  geom_point() +
+  geom_abline(data = d,
+              aes(intercept = `(Intercept)`, slope = Z_Length, colour = Lake )) +
+  theme_classic()
 
 ```
+
+```{r}
+# Model 8 Species
+
+c <- coef(M8)
+c
+
+d <- c$Fish_Species %>% 
+  tibble::rownames_to_column("Fish_Species")
+d
+
+head(d)
+head(fish.data)
+ggplot(data = fish.data, aes(x = Z_Length, y = Z_TP, colour = Fish_Species)) +
+  geom_point() +
+  geom_abline(data = d,
+              aes(intercept = `(Intercept)`, slope = Z_Length, colour = Fish_Species )) +
+  theme_classic()
+```
+
 
 
 

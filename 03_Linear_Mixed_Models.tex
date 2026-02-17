@@ -1,0 +1,924 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Tutorial 3 - Linear Mixed Models.Rmd},
+  pdfauthor={SFR605},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Tutorial 3 - Linear Mixed Models.Rmd}
+\author{SFR605}
+\date{}
+
+\begin{document}
+\maketitle
+
+For this tutorial, we will need to install and load some packages using
+the \texttt{library} function.
+
+\#Load libraries
+
+\begin{Shaded}
+\begin{Highlighting}[]
+ \FunctionTok{library}\NormalTok{(here)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'here' was built under R version 4.5.2
+\end{verbatim}
+
+\begin{verbatim}
+## here() starts at C:/Users/sander.elliott/OneDrive - University of Maine System/Desktop/Github/SFR605
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+ \FunctionTok{library}\NormalTok{(ggplot2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'ggplot2' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+ \FunctionTok{library}\NormalTok{(lme4)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'lme4' was built under R version 4.5.2
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Matrix
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+ \FunctionTok{library}\NormalTok{(MuMIn)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'MuMIn' was built under R version 4.5.2
+\end{verbatim}
+
+We are interested in whether fish trophic position increases with fish
+size. To answer this question, we have measured body length in 3
+different fish species with 10 individuals sampled per species across 6
+different lakes. \emph{Lake = Lake ID }Fish\_Species = Fish species ID
+\emph{Fish\_Length = length of the fish in mm }Trophic\_Pos = trophic
+position {[}primary producers = 1, herbivores = 2, carnivores = 3 and
+up{]}
+\includegraphics[width=10.41667in,height=\textheight,keepaspectratio]{img/fish_trophic.jpg}
+Let's read in the data and make some exploratory plots of the
+relationship between trophic position and size.
+
+\#Explore data
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load the dataset}
+\NormalTok{fish.data }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\FunctionTok{here}\NormalTok{(}\StringTok{\textquotesingle{}data/fishdata.csv\textquotesingle{}}\NormalTok{), }\AttributeTok{stringsAsFactors =} \ConstantTok{TRUE}\NormalTok{) }
+
+\CommentTok{\# Set a simple theme for all ggplot figures}
+\NormalTok{fig }\OtherTok{\textless{}{-}} \FunctionTok{theme\_bw}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{panel.grid.minor=}\FunctionTok{element\_blank}\NormalTok{(), }
+        \AttributeTok{panel.grid.major=}\FunctionTok{element\_blank}\NormalTok{(), }
+        \AttributeTok{panel.background=}\FunctionTok{element\_blank}\NormalTok{(), }
+        \AttributeTok{strip.background=}\FunctionTok{element\_blank}\NormalTok{(), }
+        \AttributeTok{strip.text.y =} \FunctionTok{element\_text}\NormalTok{(),}
+        \AttributeTok{legend.background=}\FunctionTok{element\_blank}\NormalTok{(),}
+        \AttributeTok{legend.key=}\FunctionTok{element\_blank}\NormalTok{(),}
+        \AttributeTok{panel.border =} \FunctionTok{element\_rect}\NormalTok{(}\AttributeTok{colour=}\StringTok{"black"}\NormalTok{, }\AttributeTok{fill =} \ConstantTok{NA}\NormalTok{))}
+
+\CommentTok{\# Basic plot aesthetics for the relationship we care about}
+\NormalTok{plot }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(Fish\_Length, Trophic\_Pos), }\AttributeTok{data =}\NormalTok{ fish.data)}
+
+\CommentTok{\# Plot 1 {-} All data}
+\NormalTok{plot }\SpecialCharTok{+} \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Length (mm)"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Trophic position"}\NormalTok{, }
+       \AttributeTok{title =} \StringTok{"All data"}\NormalTok{) }\SpecialCharTok{+} 
+\NormalTok{  fig}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-2-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Plot 2 {-} By species}
+\NormalTok{plot }\SpecialCharTok{+} \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ Fish\_Species) }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Length (mm)"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Trophic position"}\NormalTok{, }
+       \AttributeTok{title =} \StringTok{"By species"}\NormalTok{) }\SpecialCharTok{+} 
+\NormalTok{  fig}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-2-2.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Plot 3 – By lake}
+\NormalTok{plot }\SpecialCharTok{+} \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ Lake) }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Length (mm)"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Trophic position"}\NormalTok{, }
+       \AttributeTok{title =} \StringTok{"By lake"}\NormalTok{) }\SpecialCharTok{+} 
+\NormalTok{  fig}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-2-3.pdf}}
+
+\#Question 1 Does the relationship between trophic position and length
+appear to differ by species and/or lake? In what way(s)?
+
+By species, It looks like the intercept changes, ascending order: 1,3,2.
+The slope may also change. Species 1 looks like it may have a lower
+slope than the other two. By lake it is a bit harder to tell, but it
+does look like the intercept varies.
+
+Now let's take a look at the data structure and the distribution of our
+continuous variables. In this chunk, we will also re-scale our variables
+to avoid convergence errors, and plot the residuals of a linear model
+against our potential random effects. As you can see, the plots suggest
+that there is residual variance that could be explained by these
+factors, so they should be included in the model.
+
+\#Explore data II
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Look at data structure}
+\FunctionTok{str}\NormalTok{(fish.data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    180 obs. of  4 variables:
+##  $ Lake        : Factor w/ 6 levels "L1","L2","L3",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ Fish_Species: Factor w/ 3 levels "S1","S2","S3": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ Fish_Length : num  105 195 294 414 237 ...
+##  $ Trophic_Pos : num  2.6 2.7 2.74 2.74 2.79 ...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Look at the distribution of samples for each factor}
+\FunctionTok{table}\NormalTok{(fish.data[ , }\FunctionTok{c}\NormalTok{(}\StringTok{"Lake"}\NormalTok{, }\StringTok{"Fish\_Species"}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     Fish_Species
+## Lake S1 S2 S3
+##   L1 10 10 10
+##   L2 10 10 10
+##   L3 10 10 10
+##   L4 10 10 10
+##   L5 10 10 10
+##   L6 10 10 10
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Look at the distribution of continuous variables:}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{), }\AttributeTok{mar =} \FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+\FunctionTok{hist}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Fish\_Length, }\AttributeTok{xlab =} \StringTok{"Length (mm)"}\NormalTok{, }\AttributeTok{main =} \StringTok{""}\NormalTok{)}
+\FunctionTok{hist}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Trophic\_Pos, }\AttributeTok{xlab =} \StringTok{"Trophic position"}\NormalTok{, }\AttributeTok{main =} \StringTok{""}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-3-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Re{-}scale your variables}
+\CommentTok{\# Standardized length, "by hand"}
+\NormalTok{fish.data}\SpecialCharTok{$}\NormalTok{Z\_Length }\OtherTok{\textless{}{-}}\NormalTok{ (fish.data}\SpecialCharTok{$}\NormalTok{Fish\_Length }\SpecialCharTok{{-}} \FunctionTok{mean}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Fish\_Length)) }\SpecialCharTok{/} 
+                      \FunctionTok{sd}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Fish\_Length)}
+
+\CommentTok{\# Standardized trophic position, with the function scale}
+\NormalTok{fish.data}\SpecialCharTok{$}\NormalTok{Z\_TP     }\OtherTok{\textless{}{-}} \FunctionTok{scale}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Trophic\_Pos)}
+
+\CommentTok{\# Simple linear test of relationship between fish length and trophic position}
+\NormalTok{lm.test }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length, }\AttributeTok{data =}\NormalTok{ fish.data)}
+
+\CommentTok{\#Save residuals}
+\NormalTok{lm.test.resid }\OtherTok{\textless{}{-}} \FunctionTok{rstandard}\NormalTok{(lm.test)}
+
+\CommentTok{\#Plot residuals by species and by lake}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{))}
+
+\FunctionTok{plot}\NormalTok{(lm.test.resid }\SpecialCharTok{\textasciitilde{}} \FunctionTok{as.factor}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Fish\_Species),}
+     \AttributeTok{xlab =} \StringTok{"Species"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Standardized residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+
+\FunctionTok{plot}\NormalTok{(lm.test.resid }\SpecialCharTok{\textasciitilde{}} \FunctionTok{as.factor}\NormalTok{(fish.data}\SpecialCharTok{$}\NormalTok{Lake),}
+     \AttributeTok{xlab =} \StringTok{"Lake"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Standardized residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-3-2.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#Fit a linear mixed model with lake and fish species as random effects}
+\FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species)
+##    Data: fish.data
+## REML criterion at convergence: 72.4662
+## Random effects:
+##  Groups       Name        Std.Dev.
+##  Lake         (Intercept) 0.4516  
+##  Fish_Species (Intercept) 0.9301  
+##  Residual                 0.2605  
+## Number of obs: 180, groups:  Lake, 6; Fish_Species, 3
+## Fixed Effects:
+## (Intercept)     Z_Length  
+##   9.752e-14    4.198e-01
+\end{verbatim}
+
+\#Question 2 Now develop a linear mixed model that allows the slopes of
+the relationship between trophic position and body length to vary by
+lake and species. Note: You don't have to evaluate how well the model
+works or fix any warnings, just show me how you would code it.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{verbatim}
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: 
+## Z_TP ~ Z_Length + (1 + Z_Length | Lake) + (1 + Z_Length | Fish_Species)
+##    Data: fish.data
+## REML criterion at convergence: 20.5786
+## Random effects:
+##  Groups       Name        Std.Dev. Corr 
+##  Lake         (Intercept) 0.45279       
+##               Z_Length    0.02378  -0.82
+##  Fish_Species (Intercept) 0.93103       
+##               Z_Length    0.15728  1.00 
+##  Residual                 0.22341       
+## Number of obs: 180, groups:  Lake, 6; Fish_Species, 3
+## Fixed Effects:
+## (Intercept)     Z_Length  
+##  -0.0009025    0.4223738  
+## optimizer (nloptwrap) convergence code: 0 (OK) ; 0 optimizer warnings; 1 lme4 warnings
+\end{verbatim}
+
+\#Question 3 Next let's make a list of 7 different mixed model
+structures that could be compared to a basic linear model. Remember to
+set REML = FALSE in order to compare your new models with the basic
+linear model where estimation method = ML. Use the naming convention M1
+- M8.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#Linear model}
+\NormalTok{M0 }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length, }\AttributeTok{data =}\NormalTok{ fish.data)}
+\CommentTok{\# Full model with varying intercepts \#Hint: you already defined this above}
+\NormalTok{M1 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\CommentTok{\# Full model with varying intercepts and slopes \#Hint: you already defined this above}
+\NormalTok{M2 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# No Lake, varying intercepts only}
+\NormalTok{M3 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+           \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\CommentTok{\# No Species, varying intercepts only}
+\NormalTok{M4 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Lake),}
+           \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\CommentTok{\# No Lake, varying intercepts and slopes}
+\NormalTok{M5 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# No Species, varying intercepts and slopes}
+\NormalTok{M6 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Lake),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Full model with varying intercepts, and slopes only varying by lake}
+\NormalTok{M7 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Full model with varying intercepts and slopes only varying by species}
+\NormalTok{M8 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Lake),}
+           \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+Now that you have defined your models, lets estimate the AICc value for
+the first model using the package MuMin.
+
+\#Compare models
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{MuMIn}\SpecialCharTok{::}\FunctionTok{AICc}\NormalTok{(M0)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 479.8591
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# To group all AICc values into a single table, we can use MuMIn::model.sel() to calculate AICc for each model (along with other outputs)}
+\NormalTok{AIC.table  }\OtherTok{\textless{}{-}}\NormalTok{ MuMIn}\SpecialCharTok{::}\FunctionTok{model.sel}\NormalTok{(M0, M1, M2, M3, M4, M5, M6, M7, M8)}
+
+\CommentTok{\# Then we can select only the columns of interest to print into a table }
+\CommentTok{\# \textasciigrave{}df\textasciigrave{} is the degree of freedom}
+\CommentTok{\# \textasciigrave{}logLik\textasciigrave{} is the loglikelihood}
+\CommentTok{\# \textasciigrave{}delta\textasciigrave{} is the AICc difference with the lowest value}
+\NormalTok{(AIC.table }\OtherTok{\textless{}{-}}\NormalTok{ AIC.table[ , }\FunctionTok{c}\NormalTok{(}\StringTok{"df"}\NormalTok{, }\StringTok{"logLik"}\NormalTok{, }\StringTok{"AICc"}\NormalTok{, }\StringTok{"delta"}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    df      logLik      AICc      delta
+## M8  7   -8.597929  31.84702   0.000000
+## M2  9   -8.216019  35.49086   3.643839
+## M1  5  -33.480080  77.30499  45.457965
+## M7  7  -33.186374  81.02391  49.176890
+## M5  6 -128.310995 269.10754 237.260517
+## M3  4 -134.532965 277.29450 245.447480
+## M4  4 -224.715763 457.66010 425.813076
+## M6  6 -224.671201 461.82795 429.980930
+## M0  3 -236.861362 479.85909 448.012065
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# For more information on the other outputs/results returned by the function \textasciigrave{}model.sel()\textasciigrave{}, see \textasciigrave{}?model.sel\textasciigrave{}.}
+\end{Highlighting}
+\end{Shaded}
+
+Let's take a closer look at M8 and M2. Hint: If these did not have the
+lowest AICc values, check your model construction. Because we are
+comparing two mixed effect models, we can set \texttt{REML\ =\ TRUE}
+when re-defining M8 and M2.
+
+\#Question 4 Re-define M8 and M2 so that \texttt{REML\ =\ TRUE} and
+print a table to compare the two models, similar to the chunk above.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#REML}
+\NormalTok{M2 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Lake) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species),}
+     \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{M8 }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(Z\_TP }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Z\_Length }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ Z\_Length }\SpecialCharTok{|}\NormalTok{ Fish\_Species) }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ Lake),}
+           \AttributeTok{data =}\NormalTok{ fish.data, }\AttributeTok{REML =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{AIC.table  }\OtherTok{\textless{}{-}}\NormalTok{ MuMIn}\SpecialCharTok{::}\FunctionTok{model.sel}\NormalTok{(M2, M8)}
+
+\NormalTok{(AIC.table }\OtherTok{\textless{}{-}}\NormalTok{ AIC.table[ , }\FunctionTok{c}\NormalTok{(}\StringTok{"df"}\NormalTok{, }\StringTok{"logLik"}\NormalTok{, }\StringTok{"AICc"}\NormalTok{, }\StringTok{"delta"}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    df    logLik     AICc    delta
+## M8  7 -10.84011 36.33137 0.000000
+## M2  9 -10.28932 39.63747 3.306098
+\end{verbatim}
+
+Keeping \texttt{REML=TRUE}, let's plot predicted vs residual values of
+M8.
+
+\#Plot residuals
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Plot predicted values vs residual values}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{4}\NormalTok{,.}\DecValTok{5}\NormalTok{,.}\DecValTok{5}\NormalTok{))}
+\FunctionTok{plot}\NormalTok{(}\FunctionTok{resid}\NormalTok{(M8) }\SpecialCharTok{\textasciitilde{}} \FunctionTok{fitted}\NormalTok{(M8), }
+     \AttributeTok{xlab =} \StringTok{\textquotesingle{}Predicted values\textquotesingle{}}\NormalTok{, }
+     \AttributeTok{ylab =} \StringTok{\textquotesingle{}Normalized residuals\textquotesingle{}}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-8-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Homogeneous dispersion of the residuals means that the assumption is respected.}
+
+\CommentTok{\# In order to check the independence of the model residuals we need to plot residuals vs each covariate of the model}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{), }\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{,}\DecValTok{4}\NormalTok{,.}\DecValTok{5}\NormalTok{,.}\DecValTok{5}\NormalTok{))}
+
+\FunctionTok{plot}\NormalTok{(}\FunctionTok{resid}\NormalTok{(M8) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fish.data}\SpecialCharTok{$}\NormalTok{Z\_Length, }
+     \AttributeTok{xlab =} \StringTok{"Length"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Normalized residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+
+\FunctionTok{boxplot}\NormalTok{(}\FunctionTok{resid}\NormalTok{(M8) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Fish\_Species, }\AttributeTok{data =}\NormalTok{ fish.data, }
+        \AttributeTok{xlab =} \StringTok{"Species"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Normalized residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+
+\FunctionTok{boxplot}\NormalTok{(}\FunctionTok{resid}\NormalTok{(M8) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Lake, }\AttributeTok{data =}\NormalTok{ fish.data, }
+        \AttributeTok{xlab =} \StringTok{"Lakes"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Normalized residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-8-2.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Homogeneous dispersion of the residuals around 0 means no pattern of residuals depending on the variable, therefore the assumption is respected!}
+\CommentTok{\# Note: The clusters are due to the data structure, where fish of only 5 size classes (large, small, and three groups in between) were captured.}
+
+\CommentTok{\# Check the normality of the model residuals as residuals following a normal distribution indicate that the model is not biased.}
+\FunctionTok{hist}\NormalTok{(}\FunctionTok{resid}\NormalTok{(M8))}
+\CommentTok{\# The residuals are normal! This means our model is not biased.}
+
+\CommentTok{\# Now we are ready for interpretation and visualization}
+\CommentTok{\# Let\textquotesingle{}s take a closer look at our final model using the \textasciigrave{}summary()\textasciigrave{} function. }
+\NormalTok{(summ\_M8 }\OtherTok{\textless{}{-}} \FunctionTok{summary}\NormalTok{(M8))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species) + (1 | Lake)
+##    Data: fish.data
+## 
+## REML criterion at convergence: 21.7
+## 
+## Scaled residuals: 
+##      Min       1Q   Median       3Q      Max 
+## -2.77186 -0.60166  0.05589  0.64239  2.27775 
+## 
+## Random effects:
+##  Groups       Name        Variance Std.Dev. Corr
+##  Lake         (Intercept) 0.20502  0.4528       
+##  Fish_Species (Intercept) 0.86707  0.9312       
+##               Z_Length    0.02466  0.1570   1.00
+##  Residual                 0.05039  0.2245       
+## Number of obs: 180, groups:  Lake, 6; Fish_Species, 3
+## 
+## Fixed effects:
+##               Estimate Std. Error t value
+## (Intercept) -0.0009059  0.5687462  -0.002
+## Z_Length     0.4222697  0.0922075   4.580
+## 
+## Correlation of Fixed Effects:
+##          (Intr)
+## Z_Length 0.929 
+## optimizer (nloptwrap) convergence code: 0 (OK)
+## boundary (singular) fit: see help('isSingular')
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-8-3.pdf}}
+
+\#Question 5 What is the slope and confidence interval of the Z\_Length
+variable in the M8 model? Slope = 0.4222697. Confidence interval =
+0.241543 - 0.6029964
+
+Is the slope of Z\_Length significantly different from 0? Yes, 0 is not
+inside the confidence interval.
+
+Remember from the lecture that you can calculate the 95\% confidence
+interval (CI) with this equation:
+\texttt{CI\ =\ Estimate\ ±\ 1.96\ ∗\ Std.\ Error} If 0 is in the
+interval, then the parameter is not significantly different from zero at
+a threshold of α = 0.05.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{CIl }\OtherTok{\textless{}{-}} \FloatTok{0.4222697} \SpecialCharTok{{-}} \FloatTok{1.96} \SpecialCharTok{*} \FloatTok{0.0922075}
+\NormalTok{CIu }\OtherTok{\textless{}{-}} \FloatTok{0.4222697} \SpecialCharTok{+} \FloatTok{1.96} \SpecialCharTok{*} \FloatTok{0.0922075}
+\NormalTok{CIl}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.241543
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{CIu}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.6029964
+\end{verbatim}
+
+\#Question 6 Make two plots to graphically visualize the different
+intercepts and slopes of the model to better interpret the results.
+Hint: You will need to extract the coefficients of the full model (from
+the model summary) and the coefficients of each level of the model,
+which can be obtained with the \texttt{coef} function.
+
+Color your data points by species in plot 1 and by lake in plot 2. Plot
+a regression line for each species and lake in plots 1 and 2,
+respectively. Hint: If using ggplot, you can add lines using
+\texttt{geom\_abline} and define the intercept and slope from a table of
+your extracted coefficients.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Model 8 Lake}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'tidyverse' was built under R version 4.5.2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'tidyr' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'readr' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'purrr' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'stringr' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'forcats' was built under R version 4.5.2
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: package 'lubridate' was built under R version 4.5.1
+\end{verbatim}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v dplyr     1.1.4     v readr     2.1.5
+## v forcats   1.0.1     v stringr   1.5.1
+## v lubridate 1.9.4     v tibble    3.2.1
+## v purrr     1.1.0     v tidyr     1.3.1
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x tidyr::expand() masks Matrix::expand()
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## x tidyr::pack()   masks Matrix::pack()
+## x tidyr::unpack() masks Matrix::unpack()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{c }\OtherTok{\textless{}{-}} \FunctionTok{coef}\NormalTok{(M8)}
+\NormalTok{c}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $Lake
+##     (Intercept)  Z_Length
+## L1 -0.085984021 0.4222697
+## L2  0.002205203 0.4222697
+## L3 -0.301816374 0.4222697
+## L4 -0.574039393 0.4222697
+## L5  0.218650002 0.4222697
+## L6  0.735549184 0.4222697
+## 
+## $Fish_Species
+##    (Intercept)  Z_Length
+## S1  -1.0752983 0.2410741
+## S2   0.5597870 0.5168302
+## S3   0.5127937 0.5089048
+## 
+## attr(,"class")
+## [1] "coef.mer"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d }\OtherTok{\textless{}{-}}\NormalTok{ c}\SpecialCharTok{$}\NormalTok{Lake }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  tibble}\SpecialCharTok{::}\FunctionTok{rownames\_to\_column}\NormalTok{(}\StringTok{"Lake"}\NormalTok{)}
+\NormalTok{d}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Lake  (Intercept)  Z_Length
+## 1   L1 -0.085984021 0.4222697
+## 2   L2  0.002205203 0.4222697
+## 3   L3 -0.301816374 0.4222697
+## 4   L4 -0.574039393 0.4222697
+## 5   L5  0.218650002 0.4222697
+## 6   L6  0.735549184 0.4222697
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(d)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Lake  (Intercept)  Z_Length
+## 1   L1 -0.085984021 0.4222697
+## 2   L2  0.002205203 0.4222697
+## 3   L3 -0.301816374 0.4222697
+## 4   L4 -0.574039393 0.4222697
+## 5   L5  0.218650002 0.4222697
+## 6   L6  0.735549184 0.4222697
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(fish.data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Lake Fish_Species Fish_Length Trophic_Pos   Z_Length      Z_TP
+## 1   L1           S1    105.1501    2.602388 -1.5050527 -1.493034
+## 2   L1           S1    194.5708    2.703522 -0.6180335 -1.287470
+## 3   L1           S1    294.3636    2.742878  0.3718739 -1.207476
+## 4   L1           S1    413.5295    2.737743  1.5539556 -1.217914
+## 5   L1           S1    237.4739    2.785936 -0.1924502 -1.119959
+## 6   L1           S1    107.9315    2.723862 -1.4774623 -1.246128
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ fish.data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Z\_Length, }\AttributeTok{y =}\NormalTok{ Z\_TP, }\AttributeTok{colour =}\NormalTok{ Lake)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_abline}\NormalTok{(}\AttributeTok{data =}\NormalTok{ d,}
+              \FunctionTok{aes}\NormalTok{(}\AttributeTok{intercept =} \StringTok{\textasciigrave{}}\AttributeTok{(Intercept)}\StringTok{\textasciigrave{}}\NormalTok{, }\AttributeTok{slope =}\NormalTok{ Z\_Length, }\AttributeTok{colour =}\NormalTok{ Lake )) }\SpecialCharTok{+}
+  \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-10-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Model 8 Species}
+
+\NormalTok{c }\OtherTok{\textless{}{-}} \FunctionTok{coef}\NormalTok{(M8)}
+\NormalTok{c}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $Lake
+##     (Intercept)  Z_Length
+## L1 -0.085984021 0.4222697
+## L2  0.002205203 0.4222697
+## L3 -0.301816374 0.4222697
+## L4 -0.574039393 0.4222697
+## L5  0.218650002 0.4222697
+## L6  0.735549184 0.4222697
+## 
+## $Fish_Species
+##    (Intercept)  Z_Length
+## S1  -1.0752983 0.2410741
+## S2   0.5597870 0.5168302
+## S3   0.5127937 0.5089048
+## 
+## attr(,"class")
+## [1] "coef.mer"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d }\OtherTok{\textless{}{-}}\NormalTok{ c}\SpecialCharTok{$}\NormalTok{Fish\_Species }\SpecialCharTok{\%\textgreater{}\%} 
+\NormalTok{  tibble}\SpecialCharTok{::}\FunctionTok{rownames\_to\_column}\NormalTok{(}\StringTok{"Fish\_Species"}\NormalTok{)}
+\NormalTok{d}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Fish_Species (Intercept)  Z_Length
+## 1           S1  -1.0752983 0.2410741
+## 2           S2   0.5597870 0.5168302
+## 3           S3   0.5127937 0.5089048
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(d)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Fish_Species (Intercept)  Z_Length
+## 1           S1  -1.0752983 0.2410741
+## 2           S2   0.5597870 0.5168302
+## 3           S3   0.5127937 0.5089048
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(fish.data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Lake Fish_Species Fish_Length Trophic_Pos   Z_Length      Z_TP
+## 1   L1           S1    105.1501    2.602388 -1.5050527 -1.493034
+## 2   L1           S1    194.5708    2.703522 -0.6180335 -1.287470
+## 3   L1           S1    294.3636    2.742878  0.3718739 -1.207476
+## 4   L1           S1    413.5295    2.737743  1.5539556 -1.217914
+## 5   L1           S1    237.4739    2.785936 -0.1924502 -1.119959
+## 6   L1           S1    107.9315    2.723862 -1.4774623 -1.246128
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ fish.data, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Z\_Length, }\AttributeTok{y =}\NormalTok{ Z\_TP, }\AttributeTok{colour =}\NormalTok{ Fish\_Species)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_abline}\NormalTok{(}\AttributeTok{data =}\NormalTok{ d,}
+              \FunctionTok{aes}\NormalTok{(}\AttributeTok{intercept =} \StringTok{\textasciigrave{}}\AttributeTok{(Intercept)}\StringTok{\textasciigrave{}}\NormalTok{, }\AttributeTok{slope =}\NormalTok{ Z\_Length, }\AttributeTok{colour =}\NormalTok{ Fish\_Species )) }\SpecialCharTok{+}
+  \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{03_Linear_Mixed_Models_files/figure-latex/unnamed-chunk-11-1.pdf}}
+
+\#Acknowledgements and Copyright Information
+
+\begin{verbatim}
+Parts of this tutorial are adapted from a workshop originally developed by Catherine Baltazar, Dalal Hanna, Jacob Ziegler, Eric Pedersen and Zofia Taranu, and some parts originally revised in French by Cédric Frenette Dussault. 
+https://r.qcbs.ca/workshops/r-workshop-07/ 
+The workshop was modified for SFR 605 according to its license: CC BY-NC-SA 4.0
+\end{verbatim}
+
+\end{document}
