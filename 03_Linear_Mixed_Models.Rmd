@@ -116,7 +116,7 @@ lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
 Now develop a linear mixed model that allows the slopes of the relationship between trophic position and body length to vary by lake and species. Note: You don't have to evaluate how well the model works or fix any warnings, just show me how you would code it.
 
 ```{r}
-lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
+lmer(Z_TP ~ Z_Length + (1 + Z_Length | Lake) + (1 + Z_Length | Fish_Species),
      data = fish.data, REML = TRUE)
 ```
 
@@ -127,16 +127,31 @@ Next let's make a list of 7 different mixed model structures that could be compa
 ```{r}
 #Linear model
 M0 <- lm(Z_TP ~ Z_Length, data = fish.data)
+# Full model with varying intercepts #Hint: you already defined this above
 M1 <- lmer(Z_TP ~ Z_Length + (1 | Lake) + (1 | Fish_Species),
-     data = fish.data, REML = TRUE)# Full model with varying intercepts #Hint: you already defined this above
-M2 <- lmer(Z_TP ~ Z_Length + (1 | Lake:Fish_Species),
-     data = fish.data, REML = TRUE)# Full model with varying intercepts and slopes #Hint: you already defined this above
-M3 # No Lake, varying intercepts only
-M4 # No Species, varying intercepts only
-M5 # No Lake, varying intercepts and slopes
-M6 # No Species, varying intercepts and slopes
-M7 # Full model with varying intercepts and slopes only varying by lake
-M8 # Full model with varying intercepts and slopes only varying by species
+     data = fish.data, REML = FALSE)
+# Full model with varying intercepts and slopes #Hint: you already defined this above
+M2 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Lake) + (1 + Z_Length | Fish_Species),
+     data = fish.data, REML = FALSE)
+# No Lake, varying intercepts only
+M3 <- lmer(Z_TP ~ Z_Length + (1 | Fish_Species),
+           data = fish.data, REML = FALSE)
+# No Species, varying intercepts only
+M4 <- lmer(Z_TP ~ Z_Length + (1 | Lake),
+           data = fish.data, REML = FALSE)
+# No Lake, varying intercepts and slopes
+M5 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species),
+     data = fish.data, REML = FALSE)
+# No Species, varying intercepts and slopes
+M6 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Lake),
+     data = fish.data, REML = FALSE)
+# Full model with varying intercepts, and slopes only varying by lake
+M7 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Lake) + (1 | Fish_Species),
+     data = fish.data, REML = FALSE)
+# Full model with varying intercepts and slopes only varying by species
+M8 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species) + (1 | Lake),
+           data = fish.data, REML = FALSE)
+
 ```
    
 
@@ -163,10 +178,23 @@ Let's take a closer look at M8 and M2. Hint: If these did not have the lowest AI
 #Question 4
 Re-define M8 and M2 so that `REML = TRUE` and print a table to compare the two models, similar to the chunk above.
 
+```{r}
+#REML
+M2 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Lake) + (1 + Z_Length | Fish_Species),
+     data = fish.data, REML = TRUE)
+M8 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species) + (1 | Lake),
+           data = fish.data, REML = TRUE)
+AIC.table  <- MuMIn::model.sel(M2, M8)
+
+(AIC.table <- AIC.table[ , c("df", "logLik", "AICc", "delta")])
+```
+
+
 Keeping `REML=TRUE`, let's plot predicted vs residual values of M8. 
 
 #Plot residuals
 ```{r}
+
 # Plot predicted values vs residual values
 par(mar=c(4,4,.5,.5))
 plot(resid(M8) ~ fitted(M8), 
@@ -203,16 +231,34 @@ hist(resid(M8))
 
 #Question 5
 What is the slope and confidence interval of the Z_Length variable in the M8 model?
+Slope = 0.4222697.
+Confidence interval = 0.241543 - 0.6029964
+
 Is the slope of Z_Length significantly different from 0?
+Yes, 0 is not inside the confidence interval.
+
 Remember from the lecture that you can calculate the 95% confidence interval (CI) with this equation:
 `CI = Estimate ± 1.96 ∗ Std. Error`
 If 0 is in the interval, then the parameter is not significantly different from zero at a threshold of α = 0.05.
+
+```{r}
+CIl <- 0.4222697 - 1.96 * 0.0922075
+CIu <- 0.4222697 + 1.96 * 0.0922075
+CIl
+CIu
+```
+
 
 #Question 6
 Make two plots to graphically visualize the different intercepts and slopes of the model to better interpret the results. Hint: You will need to extract the coefficients of the full model (from the model summary) and the coefficients of each level of the model, which can be obtained with the `coef` function.
 
 Color your data points by species in plot 1 and by lake in plot 2. Plot a regression line for each species and lake in plots 1 and 2, respectively.
 Hint: If using ggplot, you can add lines using `geom_abline` and define the intercept and slope from a table of your extracted coefficients.
+
+```{r}
+
+```
+
 
 
 #Acknowledgements and Copyright Information
