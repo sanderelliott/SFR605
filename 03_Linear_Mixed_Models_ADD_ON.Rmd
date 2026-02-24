@@ -2,8 +2,8 @@
 title: "Tutorial 3 - Linear Mixed Models.Rmd"
 author: "SFR605"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 For this tutorial, we will need to install and load some packages using the `library` function. 
@@ -308,30 +308,6 @@ The workshop was modified for SFR 605 according to its license: CC BY-NC-SA 4.0
 ```
 
 # Extension for Week - day - Assignment
-
-
-```{r}
-fav1 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species) + (1 | Lake),
-           data = fish.data, REML = TRUE)
-
-fav2 <- lmer(Z_TP ~ Z_Length + (1 + Z_Length | Fish_Species) + (1 | Lake),
-           data = fish.data, REML = FALSE)
-
-fav_pql <- glmmPQL(
-  Z_TP ~ Z_Length,
-  random = list(
-    Fish_Species = pdSymm(~ Z_Length),
-    Lake = ~ 1
-  ),
-  family = gaussian,
-  data = fish.data
-)
-
-fav_pql
-sumpql <- summary(fav_pql)
-sumpql
-
-```
 
 
 ```{r}
