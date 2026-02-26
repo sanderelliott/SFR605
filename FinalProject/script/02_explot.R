@@ -164,7 +164,20 @@ ggplot(depart_m, aes(x = d_leave)) +
 penob_cyc <- penob_events %>% 
   filter(animal_id %in% depart_m$animal_id)
 
-ggplot(penob_cyc, aes(x=last_detection, y=animal_id, color=location))+
-  geom_point()+xlab("Detection Timestamp") + ylab("Transmitter ID")
+ggplot(penob_cyc, aes(
+  y = animal_id,
+  x = first_detection,
+  xend = last_detection,
+  yend = animal_id,
+  color = location)) +
+  geom_segment(linewidth = 1.2, alpha = 0.8) +
+  labs(
+    x = "Detection Interval",
+    y = "Transmitter ID",
+    color = "Location") +
+  geom_point(aes(x = first_detection), size = 2) + 
+  geom_point(aes(x = last_detection), size = 2) +
+  theme_classic()
+
 
 

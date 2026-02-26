@@ -755,7 +755,7 @@ s(RelativeDepth) has a lower AIC. This means that the non-linear
 interaction improves our model's performance, and our ability to
 understand the drivers of bioluminescence.
 
-## Generalization 
+## Generalization
 
 The basic additive model can be extended in the following ways: *Using
 other distributions for the response variable with the family argument
@@ -851,7 +851,7 @@ To get an overview of families available in mgcv :
 ?family.mgcv
 ```
 
-# Question 7 
+# Question 7
 
 1\. Fit a new model `smooth_interact_tw` with the same formula as the
 `smooth_interact` model, but with a distribution from the *Tweedie*
@@ -970,7 +970,7 @@ within a given year there is about 20 degrees variation in temperature,
 on average. The actual data vary around these values and that is the
 unexplained variance.
 
-# GAMM 
+# GAMM
 
 When observations are not independent, GAMs can be used to either
 incorporate: \*a correlation structure to model autocorrelated
@@ -1196,7 +1196,7 @@ determine the best fit model
 AIC(gamm_intercept, gamm_int_slope, gamm_slope, gamm_smooth)
 ```
 
-# Question 8 
+# Question 8
 
 Which is the best model? Explain your reasoning. Hint: AICs are similar
 so consider AIC but don't rely entirely on it.
