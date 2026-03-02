@@ -156,10 +156,44 @@ The output from `nlm` is mostly the same as for `optimize` but it includes a few
 
 ### Questions
 
-```         
-1) Include code to make a plot of the exponential PDF (with the MLE parameter estimate) on top of the histogram of the data.
-2) Repeate the nlm optimization 3 more times with non-trivially different initial guesses to assess whether the algorithm is converging to the same optimum. Make a histogram of all 4 fits and comment on their consistency (or lack of consistency)
+1)  Include code to make a plot of the exponential PDF (with the MLE parameter estimate) on top of the histogram of the data.
+
+```{r}
+
+
+
+hist(dat, freq = FALSE) ## freq apparently rescales to probability not count
+
+
+xvals <- seq(0, max(dat), length.out = 200)
+yvals <- dexp(xvals, rate = rho_mle)
+
+lines(xvals, yvals)
+
+
 ```
+
+2)  Repeate the nlm optimization 3 more times with non-trivially different initial guesses to assess whether the algorithm is converging to the same optimum. Make a histogram of all 4 fits and comment on their consistency (or lack of consistency)
+
+```{r}
+
+fit2 <- nlm(lkexp,0.03,dat=dat)
+
+fit3 <- nlm(lkexp,0.07,dat=dat)
+
+fit4 <- nlm(lkexp,0.09,dat=dat)
+
+fit5 <- nlm(lkexp,0.05,dat=dat)
+
+est <- c(fit2$estimate, fit3$estimate, fit4$estimate, fit5$estimate)
+
+est
+
+hist(est, breaks = 10)
+
+```
+
+They are pretty consistent. Fit2 is the most different but on a really fine scale. They are all \~ 0.1.
 
 ## Case Study 2: Change in Fire Risk With Time
 
@@ -178,10 +212,27 @@ lines(age,dweibull(age,.5,50),col="green")
 
 ### Questions
 
-```         
-3) Does increasing the `shape` parameter cause fire risk to increase or decrease with age? Note that risk (or more formally, hazard) is the probability of an event at a point in time conditional on having already survived to that time (e.g., the exponential PDF, which is monotonically decreasing, has constant hazard). If you can't figure this out from the dweibull, try looking up (e.g. Wikipedia) and plotting the equivalent Weibull hazard function.
-4) Optional: Plot the CDF of these 3 distributions. What is significant about the scale parameter? What is the analytical solution for the CDF at this point? Add these lines to your CDF plot.
+3)  Does increasing the `shape` parameter cause fire risk to increase or decrease with age? Note that risk (or more formally, hazard) is the probability of an event at a point in time conditional on having already survived to that time (e.g., the exponential PDF, which is monotonically decreasing, has constant hazard). If you can't figure this out from the dweibull, try looking up (e.g. Wikipedia) and plotting the equivalent Weibull hazard function.
+
+Increasing the shape parameter causes fire risk to initially increase with time before decreasing over time, eventually settling lower than the low shape parameters.
+
+4)  Optional: Plot the CDF of these 3 distributions. What is significant about the scale parameter? What is the analytical solution for the CDF at this point? Add these lines to your CDF plot.
+
+```{r}
+cdf_at_scale <- 1 - exp(-1)
+cdf_at_scale
+
+plot(age,pweibull(age,1,50),type='l',ylab="density",ylim=c(0,1)) 
+lines(age,pweibull(age,2,50),col="red") 
+lines(age,pweibull(age,.5,50),col="green") 
+abline(v = 50, lty = 2) 
+abline(h = cdf_at_scale, lty = 2) 
+points(50, cdf_at_scale)
+
+
 ```
+
+50 is the point at which all three lines intersect, meaning the cumulative probability of fire is the same at 50. This means that the probability of a fire occurring at or before 50 years is the same. At the point where x = lambda, the equation becomes 1 - exp(-1) because 50/50 = 1, and 1 to any power is still 1.
 
 Let’s begin by loading up the data set and take a quick look at it. The data are actually stored as the number of times each return interval was observed, so our first step is to use `rep` to reconstruct the observations
 
@@ -204,8 +255,21 @@ wlik <- function(param,dat){
 
 ### Questions
 
-```         
-5) Since the exponential is a special case of the Weibull, use the numerical optimization code from the first case study to solve for the exponential MLE (rho_mle) for the fire scar data 
+5)  Since the exponential is a special case of the Weibull, use the numerical optimization code from the first case study to solve for the exponential MLE (rho_mle) for the fire scar data
+
+```{r}
+lkexpf <- function(rho, firedata){
+  -sum(dexp(firedata, rate = rho, log = TRUE))
+}
+
+fitfir <- optimize(
+  lkexpf,
+  interval = c(0.001, 1),
+  firedata = firedata
+)
+
+fitfir
+
 ```
 
 Next we'll specify the initial conditions for the numerical optimization – it doesn't matter what values you actually start from provided they are reasonable since they are just our first guess, though the closer you are to the correct value the less likely you are to end up in a local minima and the faster the algorithm will find the minima. Below we start with the MLE for the Exponential special case.
