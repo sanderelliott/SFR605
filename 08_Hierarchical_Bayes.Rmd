@@ -1,0 +1,80 @@
+---
+title: "Tutorial - Hierarchical Bayes"
+author: "SFR 605"
+output: html_document
+---
+
+The objective of this tutorial is to explore basic Bayesian hierarchical models.  We will focus on the most common class of hierarchical models, which are linear mixed models.  Mixed models refer to models that include both hierarchical “random” effects and non-hierarchical “fixed” effects.  Everything that we apply below to linear models can also be applied to generalized linear models (e.g. logistic and poisson regression) and thus generalized linear mixed models for which all of our traditional non-hierarchical linear and GLM exist as a special case.  While we have focused on random effects from Maximum Likelihood perspective earlier in the course, we will now approach the same model structure using the Bayesian perspective, where we can easily relax additional assumptions.
+
+# Case Study: Mosquito population size
+
+For this lab we will look at data on mosquito abundance.  The data file “Mosquito.csv” contains ten years worth of data for each of 5 replicate traps. We will begin with the simplest possible model to explain this data and incrementally add complexity.
+```{r}
+dat <- read.csv("data/Mosquito.csv",header=TRUE,as.is = TRUE)
+```
+
+
+### Task 1: 
+
+1.  Plot mosquito abundance as a function of time in a way that distinguishes the reps (e.g. with lines, colors, or symbols)
+
+2.	Fit a Bayesian model for the overall "global" mean `mu`, and precision `tau` (1/(sd^2)), reporting summary statistics for both. 
+
+3.	Add posterior CI and PI to the plot.
+
+# Random time effect
+
+From the graphs in Task 1 it should be apparent that there is systematic year-to-year variability that is unexplained by just a simple mean.  Since at this point we don't know the cause of this variability we can begin by adding a random effect for year.  
+
+To add the random year effect:
+
+1. Add the random year effect to the process model.
+```
+   Ex[i] <- mu + alpha.t[time[i]]		## process model (varies with time but not rep)
+```
+Note that the version above is formatted slightly differently from the version covered in the lecture slides. In the lecture, the data were in a wide format, `x[t,b,i]`, where time, block, and individual were different dimensions in an array. Alternatively, one can format data in a long format, like we see in this file, with time and replicate as columns
+```{r}
+head(dat)
+```
+The variable `time` used in the code above is a vector of indices (length = nrow(dat)) matching a specific row of data to a specific `alpha.t`. Therefore, when building the `data` list that you pass into `jags.model` you'll want to add `time` and have that vector contain values in the range from 1 to 10 instead of 1995-2004. When working with long data, the easiest way to do this is to convert a column to a factor, then from a factor to an integrer
+```{r}
+as.integer(as.factor(dat$time))
+```
+
+2. Update the data model to reference `Ex[i]` instead of `mu`
+
+3. Add the random year effect parameter model (within a loop over time)
+```
+alpha.t[t] ~ dnorm(0,tau.t)		## random year effect
+```
+
+4. Add a prior on `tau.t`, the year-to-year variability
+
+### Task 2:
+
+4.  Fit the random-time model and turn in a plot like in Task 1 with the posterior CI and PI plotted against the data.
+Hint: once you convert the JAGS coda object to a matrix, you can use `grep` to figure out which columns contain alphas: 
+```
+jags.mat <- as.matrix(jags.out)
+sel.a <- grep("alpha",colnames(jags.mat))
+plot(jags.out[,sel.a])
+summary(jags.out[,sel.a])
+alpha <- jags.mat[,sel.a]
+apply(alpha,2,mean)
+```
+5.	Based on the posterior mean estimates from this model, approximately what percentage of the variance in the mosquito densities is explained by the year effects? Which parameters (and from which models) do you need to look at to assess this?
+
+6. Extra Credit: Repeat the Task 2 analysis adding a random effect on `rep`
+
+# Mixed Effects
+
+You are discussing your research with a colleague and mention that your random effects model showed that one year, 2002, had notably lower mosquito abundance.  He suggests that the driver may be exogenous and sends you a data file, `met.csv` (you will find this data in the `SFR605/data` folder), that contains the mean annual temperature (°C), precipitation (mm/year), and relative humidity (%) for 1995-2009 years.
+ 
+### Task 3:
+
+6.  As an exploratory analysis of this hypothesis, plot the posterior mean of your random year effect (alpha.t) versus each of the three met variables.  Turn in figures and note which variable(s) are worth exploring further.
+7.	Convert the random effects model to a mixed effects model by converting the mean, mu, to a linear model, `beta0 + beta1*met[i]` where met is the meteorological covariate you want to include, while keeping the random year effect.
+8.	Fit your mixed effects model and plot the model CI and PI vs the data
+9.	Create a summary table that provides the posterior parameter means and CI for all 3 models and their DIC scores.
+10.	Optional: Use the best fitting model to predict the next 5 years (2005-2009) of mosquito abundance including an uncertainty estimate (predictive interval). Turn in a graph of your prediction. Hint: the easiest way to make predictions is to create new rows in your data object that has covariates but NA's for the y's.
+

@@ -544,30 +544,3 @@ lines(xpred,pi[1,],col=4,lty=2)	## lower PI
 lines(xpred,pi[2,],col=4,lty=2)	## upper PI
 abline(b0,b1)				## true model
 ```
-
-### Task 5: Power Analysis
-
-An important question in experimental design is what sample size is required in order to estimate model parameters accurately and to the required degree of precision.  To take a rough first pass at this I'd like you to re-run this analysis two more times with a sample size of n=30 the first time and n=5 the second time.  (note: I'll be asking you to make comparisons between the models so you'll want to take a look at what information you'll need to save from each run before re-running the model)  For each run check the MCMC diagnostics and then report the following
-
-* Convergence diagnostics
-* A summary table of parameter estimates
-* A plot with the pseudo-data, the true model, the 95% credible interval on the model, and the 95% prediction interval.
-
-_Overall also provide the following_:
-
-* Plots showing how the estimate of the parameter mean and the 95% CI around that mean changes with sample size.  Sample size should be on the x-axis _on a log scale_.  Make plots for each of the 3 parameters
-* Describe how sample size affects the ability to estimate the true model parameters.  Does the 95% CI or PI ever fail to encompass the true model? How does the width of the CI change as a function of sample size?
-* What is the (approximate) minimum sample size that would be required to reject the hypothesis that the slope of this line is 3/2 with 95% confidence.
-
-### Task 6:  Informative Priors (Extra Credit)
-
-Suppose a review of the scientific literature reveals that 95% of the reported values for the slope of the relationship between these two variables fall between 1.5 and 2.5.  For the case where n=5 re-run your analysis with the same pseudodata as you did in Task 3 above but incorporating this additional information as a prior constraint on the slope.  Include the following in your report
-
-* Convergence diagnostics
-* A summary table of parameter estimates
-* A plot with the pseudo-data, the true model, the 95% credible interval on the model, and the 95% prediction interval.
-* Describe how the inclusion of prior information affects the estimate and CI for all of the parameters (not just the slope) and the overall CI and PI on the model.
-
-
-
-
