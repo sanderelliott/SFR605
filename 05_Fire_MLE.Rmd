@@ -259,7 +259,7 @@ wlik <- function(param,dat){
 
 ```{r}
 lkexpf <- function(rho, firedata){
-  -sum(dexp(firedata, rate = rho, log = TRUE))
+  -sum(dexp(firedata,rho, log = TRUE))
 }
 
 fitfir <- optimize(
@@ -267,6 +267,8 @@ fitfir <- optimize(
   interval = c(0.001, 1),
   firedata = firedata
 )
+
+fitfir
 
 rho_mle <- fitfir$minimum
 rho_mle
@@ -346,16 +348,62 @@ Apply one of the **numerical optimization methods** you used above in order to e
 
 ### Questions
 
-        
-6) Please include the following in your answer:
-*  Numerical estimate of rho
+6)  Please include the following in your answer:
+
+-   Numerical estimate of rho
 
 ```{r}
+
+lkbinexp <- function(rho, dat, T){
+  th <- exp(-rho*T)
+  -sum(dbinom(dat, size = 1, prob = th, log = TRUE))
+}
+
+rho_mlebinexp <- optimize(lkbinexp, interval = c(.001, 1), dat = surv, T = 20) 
+
+rho_mlebinexp
+
+```
+
+-   Negative log likelihood profile
+
+```{r}
+
+## likelihood profile
+
+rseq <- seq(0.05, .15,length = 200)		## range of rho values on the x-axis
+
+llkbex <- sapply(rseq, lkbinexp, dat = surv, T = 20)
+
+plot(rseq, llkbex, main = "Log Likelihood", xlab = "rho", ylab = "-log(L)")
+abline(v=rho_mlebinexp$minimum, lty=2)
+abline(h=rho_mlebinexp$objective, lty=2)
+
+plot(rseq, exp(-llkbex), main = "Likelihood",xlab="rho",ylab="L")
+abline(v=rho_mlebinexp$minimum,lty=2)
 
 ```
 
 
-*  Negative log likelihood profile
-*  Answer the following question:  If we wanted to test the assumption that mortality rate was constant in time, which of the two data sets could we use and what model would we fit?
-7) Optional: A plot of the exponential PDF with two curves, one based on the Exponential model from the start of this lab and the second from the Binomial/Exponential fit you just found 
+-   Answer the following question: If we wanted to test the assumption that mortality rate was constant in time, which of the two data sets could we use and what model would we fit?
+
+It would be the first dataset, as the second only includes one point in time. We could try and fit a Weibull and test the different shape parameters. If the best fit is ~ 1, then the mortality rate is constant over time. 
+
+7)  Optional: A plot of the exponential PDF with two curves, one based on the Exponential model from the start of this lab and the second from the Binomial/Exponential fit you just found
+
+```{r}
+
+xvals1 <- seq(0, max(dat), length.out = 200)
+yvals1 <- dexp(xvals1, rate = fit$minimum)
+
+xvals2 <- seq(0, max(dat), length.out = 200)
+yvals2 <- dexp(xvals1, rate = rho_mlebinexp$minimum)
+
+plot(xvals1,yvals1,type='l', col = "red") 
+lines(xvals2, yvals2, col = "blue")
+legend("topright",
+       legend = c("Binomial/Exponential PDF", "Exponential PDF"),
+       col    = c("red", "blue"),
+       lwd    = 2)
+```
 
