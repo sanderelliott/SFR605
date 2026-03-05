@@ -148,7 +148,7 @@ abline(v=fit$minimum,lty=2,col=2)
 An alternative optimization function in R is `nlm` (nonlinear minimization). The arguments for `nlm` are slightly different from `optimize`, the first still being the function to optimize but the second being a vector of the initial conditions the same length as the number of dimensions – the initial best guess of the parameters is used as the starting place for the optimization.
 
 ```{r}
-fit2 <- nlm(lkexp,0.03,dat=dat)
+fit2 <- nlm(lkexp, 0.03, dat = dat)
 fit2
 ```
 
@@ -162,7 +162,7 @@ The output from `nlm` is mostly the same as for `optimize` but it includes a few
 
 
 
-hist(dat, freq = FALSE) ## freq apparently rescales to probability not count
+hist(dat, freq = FALSE) ## freq re scales to probability not count
 
 
 xvals <- seq(0, max(dat), length.out = 200)
@@ -177,13 +177,13 @@ lines(xvals, yvals)
 
 ```{r}
 
-fit2 <- nlm(lkexp,0.03,dat=dat)
+fit2 <- nlm(lkexp, 0.03, dat = dat)
 
-fit3 <- nlm(lkexp,0.07,dat=dat)
+fit3 <- nlm(lkexp, 0.07, dat = dat)
 
-fit4 <- nlm(lkexp,0.09,dat=dat)
+fit4 <- nlm(lkexp, 0.09, dat = dat)
 
-fit5 <- nlm(lkexp,0.05,dat=dat)
+fit5 <- nlm(lkexp,0.05,dat = dat)
 
 est <- c(fit2$estimate, fit3$estimate, fit4$estimate, fit5$estimate)
 
@@ -219,12 +219,12 @@ Increasing the shape parameter causes fire risk to initially increase with time 
 4)  Optional: Plot the CDF of these 3 distributions. What is significant about the scale parameter? What is the analytical solution for the CDF at this point? Add these lines to your CDF plot.
 
 ```{r}
-cdf_at_scale <- 1 - exp(-1)
+cdf_at_scale <- 1 - exp(-1) ## analytical solution
 cdf_at_scale
 
-plot(age,pweibull(age,1,50),type='l',ylab="density",ylim=c(0,1)) 
-lines(age,pweibull(age,2,50),col="red") 
-lines(age,pweibull(age,.5,50),col="green") 
+plot(age, pweibull(age, 1, 50),type = 'l',ylab = "density", ylim = c(0,1)) 
+lines(age, pweibull(age, 2, 50), col = "red") 
+lines(age, pweibull(age, .5, 50),col = "green") 
 abline(v = 50, lty = 2) 
 abline(h = cdf_at_scale, lty = 2) 
 points(50, cdf_at_scale)
@@ -355,7 +355,7 @@ Apply one of the **numerical optimization methods** you used above in order to e
 ```{r}
 
 lkbinexp <- function(rho, dat, T){
-  th <- exp(-rho*T)
+  th <- exp(-rho * T)
   -sum(dbinom(dat, size = 1, prob = th, log = TRUE))
 }
 
@@ -369,25 +369,21 @@ rho_mlebinexp
 
 ```{r}
 
-## likelihood profile
 
-rseq <- seq(0.05, .15,length = 200)		## range of rho values on the x-axis
+rseq <- seq(0.04, .14,length = 200)	
 
 llkbex <- sapply(rseq, lkbinexp, dat = surv, T = 20)
 
 plot(rseq, llkbex, main = "Log Likelihood", xlab = "rho", ylab = "-log(L)")
-abline(v=rho_mlebinexp$minimum, lty=2)
-abline(h=rho_mlebinexp$objective, lty=2)
+abline(v = rho_mlebinexp$minimum, lty=2)
+abline(h = rho_mlebinexp$objective, lty=2)
 
-plot(rseq, exp(-llkbex), main = "Likelihood",xlab="rho",ylab="L")
-abline(v=rho_mlebinexp$minimum,lty=2)
 
 ```
 
-
 -   Answer the following question: If we wanted to test the assumption that mortality rate was constant in time, which of the two data sets could we use and what model would we fit?
 
-It would be the first dataset, as the second only includes one point in time. We could try and fit a Weibull and test the different shape parameters. If the best fit is ~ 1, then the mortality rate is constant over time. 
+It would be the first dataset, as the second only includes one point in time. We could try and fit a Weibull and test the different shape parameters. If the best fit is \~ 1, then the mortality rate is constant over time.
 
 7)  Optional: A plot of the exponential PDF with two curves, one based on the Exponential model from the start of this lab and the second from the Binomial/Exponential fit you just found
 
@@ -407,3 +403,4 @@ legend("topright",
        lwd    = 2)
 ```
 
+*AI Statement: AI was used to find missing parts of code, but not entire blocks. This was the case for Q 1, & 6.1. It helped to find the single arguments I was missing to make the code work (freq = FALSE, & incorporating theta into dbinom()). It was also used to explain provided code from the tutorial in different terms which helped me adapt it when writing my own.*
