@@ -190,17 +190,16 @@ out.mat \<- optimize(likMat,x=dia,p=cones)
 out.mat
 
 ```{r}
-#dia
-#cones
-likMat = function(x,p){
-  -sum(dbinom(x, 1, p,log=TRUE)) 
-}
 
-out.mat <- optimize(likMat,x=dia,p=cones)
-out.mat
+
+b0 = mean(dia)
+b1 = sd(dia)
+param = c(b0,b1)
+
+xseq <- seq(min(dia), max(dia), length = 200)
 
 plot(dia,cones)
-lines(xseq, pnorm(xseq,15,3))
+lines(xseq, pnorm(xseq,b0,b1), type = 'l')
 ```
 
 This vector will be passed to our likelihood function below. When
@@ -214,11 +213,43 @@ the data).
 -   Similar to `likFec` and the models we constructed in the last
     tutorial, code up the negative log likelihood for this model as an R
     function
+
+```{r}
+
+
+likMat <- function(param, x, m) {
+  b0 <- param[1]
+  b1 <- param[2]
+  theta <- pnorm((x - b0) / b1)
+  -sum(dbinom(m, size = 1, prob = theta, log = TRUE))
+}
+
+```
+
 -   Test your function at your initial guess to verify that the function
     is working
+
+    ```{r}
+
+    b0 = mean(dia)
+    b1 = sd(dia)
+    param = c(b0,b1)
+
+    likMat(param, x = dia, m = cones)
+
+    ```
+
 -   Use a numerical optimization function to fit your log likelihood to
     the data. Make sure to use an optimization function that supports
     multivariate problems (not `optimize`)
+
+    ```{r}
+
+
+    out.mat <- optim(param, likMat, x = dia, m = cones)
+    out.mat
+
+    ```
 
 ## Combined Fecundity and Maturation
 
@@ -289,7 +320,7 @@ Having defined the likelihood function the next step is to numerically
 minimize the negative log likelihood
 
 ```{r}
-param  <- c(0,0,0)        ## initial guess (update this based on the first two models!)
+param  <- c(0.008494147,21.794483,7.122348)     ## initial guess (update this based on the first two models!)
 likfit(param,dia,ncone)   ## verify that the function works
 out = optim(param,        ## run numerical MLE
              likfit,
@@ -312,6 +343,19 @@ fecundity plot include two lines, one representing fecundity vs size
 given maturity, $g(x)$, and the second that is the expected number of
 cones observed, which combines fecundity and the probability of
 maturation $g(x) \cdot \theta(x)$
+
+```{r}
+
+plot(dia, ncone)
+lines(xseq, out$par[1] * xseq^2, col = "red", lwd = 3)              
+lines(xseq, out$par[1] * xseq^2 * pnorm((xseq - out$par[2]) / out$par[3]),
+      col = "blue", lwd = 3)
+
+## Maturation
+plot(dia,cones)
+lines(xseq, pnorm(xseq,out$par[2],out$par[3]), type = 'l')
+
+```
 
 ## Effects of Elevated CO2 on Reproduction
 
@@ -368,6 +412,23 @@ elevated CO2 treatement (tmt == CO2). Save the output to the variable
 parameter vectors (e.g. a0[3]). Generate a table of the values of the
 parameters and include it here.
 
+```{r}
+
+## Ambient
+dia.elev   = b00$diam[tmt=="CO2"]   ## tree diameters
+ncone.elev = b00$cones[tmt=="CO2"]    ## number of cones
+
+out.elev = optim(param,likfit,method="L-BFGS-B",
+             lower=c(0.001,10,1),upper=c(1,30,10),dia=dia.elev,ncone=ncone.elev)
+a0[3]  = out.elev$par[1]
+b0[3]  = out.elev$par[2]
+b1[3]  = out.elev$par[3]
+lnL[3] = out.elev$value
+n[3]     = length(ncone.elev)
+out.elev
+
+```
+
 ## Model Selection
 
 Finally, we'll perform a *Likelihood Ratio Test*, which is a statistical
@@ -408,12 +469,38 @@ graph, with different colors or symbols for ambient vs elevated data).
 Based on these graphs, the parameter values, and the likelihood ratio
 test, answer the following questions:
 
+```{r}
+plot(dia, ncone)
+lines(xseq, a0[1] * xseq^2,
+      col = 1)
+lines(xseq, a0[2] * xseq^2,
+      col = 2)
+lines(xseq, a0[3] * xseq^2,
+      col = 3)
+
+## Maturation
+plot(dia,cones)
+lines(xseq, pnorm(xseq,b0[1],b1[1]), type = 'l', col = 1)
+lines(xseq, pnorm(xseq,b0[2],b1[2]), type = 'l', col = 2)
+lines(xseq, pnorm(xseq,b0[3],b1[3]), type = 'l', col = 3)
+```
+
 1.  Does elevated CO2 have an effect on fecundity? (Provide explanation
     for your answer).
+
+Yes, it increases expected cones at higher diameters. It also increases
+the likelihood of maturity given most diameters.
+
 2.  Is this effect simply due to there being larger trees in the
     elevated plots, or does CO2 affect the maturation rate and/or the
     fecundity of trees (i.e. the cone production at a given tree size)?
     If there is an effect, in what direction is it?
+
+There is a higher likelihood for a tree at any diameter to be mature
+(provide a cone). This model is saying that across all sizes, there is a
+higher likelihood that the tree has a cone. The same is true for number
+of cones. At all diameters, the elevated trees are expected to have more
+cones.
 
 #Confidence and Predictive Intervals
 
@@ -448,6 +535,15 @@ $n_{par}$ is the number of parameters. \* $k = 2$ for the standard AIC.
 Compare the AICs for the two models, interpret the results for this
 test, and compare with the results from the LRT previously performed.
 
+```{r}
+AIC_combined <- -2 * (-lnL[1]) + 2 * 3
+AIC_separate <- -2 * (-(lnL[2] + lnL[3])) + 2 * 6
+AIC_combined
+AIC_separate
+```
+
+The AIC of the separated models is significantly lower than the combined. This means that the treatment does meaningfully effect tree fecundity and maturation. This agrees with the LRT test that the treatment has a significant effect on maturation and fecundity. 
+
 ## Bootstrapped Interval Estimates
 
 Next, let's calculate the bootstrap confidence and predictive intervals.
@@ -463,7 +559,7 @@ replicates**
 
 ```{r}
 ## bootstrap
-nboot <- 100  			## number of bootstrap samples
+nboot <- 999  			## number of bootstrap samples
 npred <- 31				## number of X values you predict for
 dseq  <- seq(0,30,length=npred)		## diameter sequence
 mle   <- matrix(NA,nrow=nboot,ncol=3)	## storage for parameter estimates
@@ -522,6 +618,7 @@ Don't forget to update the variable `param` so that it contains the
 previous best-fit parameters for the ambient CO2 model.
 
 ```{r}
+param <- c(0.01882248, 23.02788903, 7.46780515)
 for(i in 1:nboot){
   if(i%%100 == 0) print(i)  					## progress indicator
   samp <- sample(length(dia.t),replace=T)		##Sample row indices 
@@ -549,7 +646,7 @@ the MLE and the confidence intervals.
 
 ```{r}
 ## density plots
-plot(density(mle[,1],width=0.005),type='l',xlim=c(0,0.05),ylim=c(0,120))
+plot(density(mle[,1],width=0.005),type='l',xlim=c(0,0.05),ylim=c(0,180))
 abline(v=a0.ci,lty=2)
 abline(v=a0[2])
 ```
