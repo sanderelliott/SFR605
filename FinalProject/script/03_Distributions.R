@@ -68,3 +68,29 @@ ggplot(depart_early, aes(x = d_leave, y = y_leave)) +
   xlab("Departure Date") + 
   ylab("Year")
 
+depart_early[depart_early[,'d_leave'] == 136,]
+
+depart_spring <- depart_early %>% 
+  filter(d_leave < 136)
+
+depart_summer <- depart_early %>% 
+  filter(d_leave > 136)
+
+depart_fall <- depart_m %>% 
+  filter(d_leave > 240)
+
+
+min(depart_spring$d_leave)
+max(depart_spring$d_leave)
+
+min(depart_summer$d_leave)
+max(depart_summer$d_leave)
+
+min(depart_fall$d_leave)
+max(depart_fall$d_leave)
+
+depart_ssn <- depart_m %>% 
+  mutate(season <- case_when())
+
+
+
