@@ -1,9 +1,11 @@
 ---
 title: "Tutorial 6 - More Maximum Likelihood"
 author: "SFR605"
-output: html_document
-editor_options: 
-  markdown: 
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -19,8 +21,6 @@ library(here)
 ```
 
 # Case Study: Effects of Elevated CO2 on Pine Fecundity
-
-![Duke Face Site](images/nsoeaerial.jpg)
 
 The response of ecosystems to elevated CO2 involves not just the change
 in growth rates of plants, but also the change in their survival and
@@ -414,7 +414,7 @@ parameters and include it here.
 
 ```{r}
 
-## Ambient
+## co2
 dia.elev   = b00$diam[tmt=="CO2"]   ## tree diameters
 ncone.elev = b00$cones[tmt=="CO2"]    ## number of cones
 
@@ -542,7 +542,10 @@ AIC_combined
 AIC_separate
 ```
 
-The AIC of the separated models is significantly lower than the combined. This means that the treatment does meaningfully effect tree fecundity and maturation. This agrees with the LRT test that the treatment has a significant effect on maturation and fecundity. 
+The AIC of the separated models is significantly lower than the
+combined. This means that the treatment does meaningfully effect tree
+fecundity and maturation. This agrees with the LRT test that the
+treatment has a significant effect on maturation and fecundity.
 
 ## Bootstrapped Interval Estimates
 
@@ -653,10 +656,49 @@ abline(v=a0[2])
 
 ##### Task 7
 
--   Generate density and CI plots for all 3 model parameters.\
+-   Generate density and CI plots for all 3 model parameters.
+
+```{r}
+plot(density(mle[,1],width=0.005),type='l',xlim=c(0,0.05),ylim=c(0,180))
+abline(v=a0.ci,lty=2)
+abline(v=a0[2])
+
+plot(density(mle[,2],width=0.005),type='l')
+abline(v=b0.ci,lty=2)
+abline(v=b0[2])
+
+plot(density(mle[,3],width=0.005),type='l')
+abline(v=b1.ci,lty=2)
+abline(v=b1[2])
+```
+
 -   Include a table of the three parameter estimates, standard errors,
     and CI.
--   Use `cov` to generate an estimate of the parameter covariance matric
+
+```{r}
+
+estimates <- param
+
+se <- apply(mle, 2, sd)
+
+ci_lower <- c(a0.ci[1], b0.ci[1], b1.ci[1])
+ci_upper <- c(a0.ci[2], b0.ci[2], b1.ci[2])
+
+amb.table <- data.frame(
+  Estimate = estimates,
+  SE = se,
+  CI_lower = ci_lower,
+  CI_upper = ci_upper)
+
+amb.table
+```
+
+-   Use `cov` to generate an estimate of the parameter covariance matrix
+
+```{r}
+cov.amb <- cov(mle)
+cov.amb
+```
 
 ##### Task 8
 
@@ -667,6 +709,37 @@ calling `optim`. Invert the Hessian to generate the covariance matrix.
 Construct confidence intervals for each parameter using the variances on
 the diagnonal and report in a table. Compare this covariance matrix and
 associated parameter confidence interval estimates to Task 2.
+
+```{r}
+
+fit.fisher <- optim(param,likfit,method="L-BFGS-B",	## fit model to sample
+                    lower=c(0.001,10,1),upper=c(1,30,30),dia=dia.t[samp],
+                    ncone=ncone.t[samp], hessian = TRUE)
+
+cov_fisher <- solve(fit.fisher$hessian)
+cov_fisher
+
+se_fisher <- sqrt(diag(cov_fisher))
+
+CI_lower_fisher <- estimates - 1.96 * se_fisher
+CI_upper_fisher <- estimates + 1.96 * se_fisher
+
+fisher.table <- data.frame(
+  Parameter = c("a0", "b0", "b1"),
+  Estimate = fit.fisher$par,
+  SE = se_fisher,
+  CI_lower = CI_lower_fisher,
+  CI_upper = CI_upper_fisher)
+
+fisher.table
+
+out.mat$par ## task 2
+fit.fisher$par
+```
+
+Task 2 only had two parameters. Comparing them to the fisher method, b0
+is more different than b1.this difference could be due to the fact that
+now we are taking into account cone counts as well.
 
 ### Model Intervals
 
@@ -711,9 +784,115 @@ fecundity process model (which combines both maturation and
 fecundity\|maturation). Include the observed data in the plot and
 interpret both this plot and the maturation plot in your answer.
 
+```{r}
+for(i in 1:nboot){
+  a0_i <- mle[i,1]
+  b0_i <- mle[i,2]
+  b1_i <- mle[i,3]
+
+  g_i     <- a0_i * dseq^2
+  theta_i <- pnorm((dseq - b0_i) / b1_i)
+  mu_i    <- g_i * theta_i
+
+  conf.cone[i,] <- mu_i
+  pred.cone[i,] <- rpois(npred, lambda = mu_i)
+}
+
+ci.cone <- apply(conf.cone, 2, quantile, c(0.025, 0.5, 0.975))
+pi.cone <- apply(pred.cone, 2, quantile, c(0.025, 0.975))
+
+plot(dia.t, ncone.t, col = as.factor(b$tmt))
+
+lines(dseq, ci.cone[2,], col=2)
+
+lines(dseq, ci.cone[1,], col=2, lty=2)
+lines(dseq, ci.cone[3,], col=2, lty=2)
+
+
+lines(dseq, pi.cone[1,], col=3, lty=3)
+lines(dseq, pi.cone[2,], col=3, lty=3)
+
+```
+
+The predictive interval is wider than the confidence interval,
+especially at higher diameters. This makes sense especially looking at
+the earlier maturation graph. There the predictive interval is huge, and
+this plot uses maturation. I see a good spread in treatment vs not.
+
 ###### Task 10
 
 Repeat the bootstrap analysis for the elevated CO2 treatment. Include
 the figures and tables from tasks 2 & 3 for the elevated plots as well
 as a final plot that compares the model confidence intervals between the
 elevated and ambient data on one figure
+
+```{r}
+nboot <- 999
+npred <- 31
+dseq  <- seq(0, 30, length = npred)
+
+mle.e <- matrix(NA, nrow = nboot, ncol = 3)
+conf.mat.e <- matrix(NA, nrow = nboot, ncol = npred)  
+conf.cone.e <- matrix(NA, nrow = nboot, ncol = npred) 
+pred.mat.e <- matrix(NA, nrow = nboot, ncol = npred) 
+pred.cone.e <- matrix(NA, nrow = nboot, ncol = npred)  
+
+dia.e <- b$diam[tmt == "CO2"]
+cones.e <- (b$cones > 0)[tmt == "CO2"]
+ncone.e <- b$cones[tmt == "CO2"]
+
+param.e <- c(0.02676403, 20.64395429, 6.77509672) ##update to elev
+
+for(i in 1:nboot){
+  samp <- sample(length(dia.e), replace = TRUE)
+  out.boot <- optim(param.e, likfit, method = "L-BFGS-B",
+                    lower = c(0.001, 10, 1), upper = c(1, 30, 30),
+                    dia = dia.e[samp], ncone = ncone.e[samp])
+  mle.e[i,] <- out.boot$par
+}
+
+a0.ci.e <- quantile(mle.e[,1], c(0.025, 0.975))
+b0.ci.e <- quantile(mle.e[,2], c(0.025, 0.975))
+b1.ci.e <- quantile(mle.e[,3], c(0.025, 0.975))
+
+for(i in 1:nboot){
+  conf.mat.e[i,] <- pnorm(dseq, mle.e[i,2], mle.e[i,3])
+  pred.mat.e[i,] <- rbinom(npred, 1, conf.mat.e[i,])
+}
+
+ci.mat.e <- apply(conf.mat.e, 2, quantile, c(0.025, 0.5, 0.975))
+pi.mat.e <- apply(pred.mat.e, 2, quantile, c(0.025, 0.975))
+
+for(i in 1:nboot){
+  a0_i <- mle.e[i,1]
+  b0_i <- mle.e[i,2]
+  b1_i <- mle.e[i,3]
+
+  g_i     <- a0_i * dseq^2
+  theta_i <- pnorm((dseq - b0_i) / b1_i)
+  mu_i    <- g_i * theta_i
+
+  conf.cone.e[i,] <- mu_i
+  pred.cone.e[i,] <- rpois(npred, lambda = mu_i)
+}
+
+ci.cone.e <- apply(conf.cone.e, 2, quantile, c(0.025, 0.5, 0.975))
+pi.cone.e <- apply(pred.cone.e, 2, quantile, c(0.025, 0.975))
+
+plot(dia.t, ncone.t, col = 2)
+points(dia.e, ncone.e, col =3)
+
+lines(dseq, ci.cone[2,], col = 2, lwd = 3)
+lines(dseq, ci.cone[1,], col = 2, lty = 2, lwd = 2)
+lines(dseq, ci.cone[3,], col = 2, lty = 2, lwd = 2)
+
+lines(dseq, ci.cone.e[2,], col = 3, lwd = 3)
+lines(dseq, ci.cone.e[1,], col = 3, lty = 2, lwd = 2)
+lines(dseq, ci.cone.e[3,], col = 3, lty = 2, lwd = 2)
+
+```
+
+*AI Statement: I found questions 8-10 to be extremely difficult. AI
+helped me to get to the answers, but I could not have gotten there
+myself. I tried to make sure I understood each step and could write out
+each line and understand before I moved on.*
