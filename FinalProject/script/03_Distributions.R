@@ -73,15 +73,48 @@ depart_early[depart_early[,'d_leave'] == 136,]
 depart_spring <- depart_early %>% 
   filter(d_leave < 136)
 
+ggplot(depart_spring, aes(x = d_leave)) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
+  theme_classic() +
+  labs(
+    title = "Departure Timing Distribution",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Julian Day",
+    y = "Density"
+  )
+
 depart_summer <- depart_early %>% 
   filter(d_leave > 136)
+
+ggplot(depart_summer, aes(x = d_leave)) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
+  theme_classic() +
+  labs(
+    title = "Departure Timing Distribution",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Julian Day",
+    y = "Density"
+  )
 
 depart_fall <- depart_m %>% 
   filter(d_leave > 240)
 
+ggplot(depart_fall, aes(x = d_leave)) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
+  theme_classic() +
+  labs(
+    title = "Departure Timing Distribution",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Julian Day",
+    y = "Density"
+  )
 
 min(depart_spring$d_leave)
 max(depart_spring$d_leave)
+
 
 min(depart_summer$d_leave)
 max(depart_summer$d_leave)
@@ -91,6 +124,52 @@ max(depart_fall$d_leave)
 
 depart_ssn <- depart_m %>% 
   mutate(season <- case_when())
+
+## Fish in departures
+
+fish_depart <- SNSfshcln %>% 
+  filter(FishID %in% depart_m$animal_id & InitialRelease == 1)
+
+ggplot(fish_depart, aes(x = ForkLength)) +
+  geom_histogram(bins = 11) +
+  theme_classic() +
+  labs(
+    title = "TotalLength",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Length",
+    y = "Frequency")
+
+ggplot(fish_depart, aes(x = Mass)) +
+  geom_histogram(bins = 11) +
+  theme_classic() +
+  labs(
+    title = "Mass",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Mass",
+    y = "Frequency")
+
+departfsh <- fish_depart %>%
+  rename(animal_id = FishID)
+
+depart_full <- depart_m %>%
+  left_join(departfsh, by = "animal_id") %>% 
+  mutate(CaptureDate = as.POSIXct(CaptureDate, format = "%Y-%m-%d %H:%M:%S"),
+         day_cap = as.numeric(difftime(last_detection, CaptureDate, units = "days")))
+
+
+glimpse(depart_full)
+
+ggplot(depart_full, aes(x = day_cap)) +
+geom_histogram() +
+  theme_classic() +
+  labs(
+    title = "Days after capture",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Mass",
+    y = "Frequency")
+
+
+
 
 
 
