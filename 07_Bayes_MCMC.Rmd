@@ -913,43 +913,50 @@ summary(jags.burn)
 ```{r}
 j.mat <- as.matrix(jags.burn)
 
-true_vals <- c(10, 2, -4, 0.5)
+pn <- c("beta1", "beta2", "beta3", "beta4", "precision")
 
-for (i in 1:5) {}
-hist(j.mat[, "beta[1]"])
-hist(j.mat[, "beta[2]"])
-hist(j.mat[, "beta[3]"])
-hist(j.mat[, "beta[4]"])
-hist(j.mat[, "prec"])
-
-par(mfrow=c(2,2))
-for(j in 1:4){
-  dens <- density(j.mat[, paste0("beta[",j,"]")])
-  plot(dens, main=paste("Posterior of beta[",j,"]"), xlab="")
-  abline(v = true_vals[j], col="red", lwd=2)
+for (i in 1:4) {
+  hist(j.mat[, i],
+       main = pn[1])
+  abline(v = beta[i], col = "red", lwd = 2)
 }
 
 
-plot(density(j.mat[,"prec"]), main="Posterior of precision")
-abline(v = 1/16, col="red", lwd=2)
+for (i in 1:4) {
+  hist(j.mat[, i],
+       main = pn[5])
+  abline(v = beta[i], col = "red")
+}
 
+hist(j.mat[, 5])
+abline(v = 1/sigma^2)
+
+for (r in 1:5) {
+  for (d in 1:5) {
+    xp <- ifelse(r == 5, 1/sigma^2, beta[r])
+    yp <- ifelse(d == 5, 1/sigma^2, beta[d])
+  plot(j.mat[,r], j.mat[,d],
+       xlab = ifelse(r == 5, "precision", paste0("beta", r)), 
+       ylab = ifelse(d == 5, "precision", paste0("beta", d)))
+  points(xp, yp, col="red", pch=19)
+}
+}
 
 pairs(j.mat)
 
-
-true_vals <- c(10, 2, -4, 0.5)
-
 ```
-
 
 -   Compare the fit parameters to the “true” parameters we used to generate the pseudo-data. How well does the statistical analysis recover the true model?
 
 ```{r}
 
-
+beta[1:4]
+1/sigma^2
+summary(jags.burn)[[1]][,1]
 
 ```
 
+Our model did a reasonable job recovering the true model. The mean values for jags.burn are similar to the original inputs. 
 
 # Regression Credible Intervals
 
