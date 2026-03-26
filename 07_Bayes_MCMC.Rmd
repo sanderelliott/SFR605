@@ -732,9 +732,54 @@ burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[,,2]>1.05,1,any)),1)+1]
 ### Task 3
 
 -   Evaluate the MCMC chain for convergence. Include relevant diagnostics and plots. Determine and remove burnin e.g. `var.burn <- window(var.out,start=burnin)`
+
+```{r}
+
+if(length(burnin) == 0) burnin = 1
+## remove burn-in
+jags.burn <- window(var.out,start=burnin)
+
+plot(jags.burn)
+
+gelman.plot(jags.burn)
+
+gelman.diag(jags.burn)
+
+```
+
 -   Report parameter summary table and plot marginal distributions
+
+```{r}
+summary(jags.burn)
+
+hist(var.mat[, "beta[1]"])
+hist(var.mat[, "beta[2]"])
+hist(var.mat[, "prec"])
+
+```
+
+
 -   Compare the summary statistics for the Bayesian regression model to those from the classical regression: summary(lm( y \~ x1 )). This should include a comparison of the means and uncertainties of **all 3 model parameters**
+
+```{r}
+summary(lm( y ~ x1 ))
+summary(jags.burn)
+
+```
+
+
 -   Compare the fit parameters to the “true” parameters we used to generate the pseudo-data. How well does the statistical analysis recover the true model?
+
+```{r}
+
+```
+
+
+n <- 100  			## define the sample size
+b0 <- 10				## define the intercept
+b1 <- 2					## define the slope
+beta <- matrix(c(b0,b1),2,1)		## put “true” regression parameters in a matrix
+sigma <- 4	
 
 # Multiple regression.
 
@@ -764,9 +809,112 @@ Extend your univariate regression model to a multivariate regression.
 ### Task 4
 
 -   Show the JAGS and R code used.
+
+```{r}
+
+multi_regression <- "
+model{
+
+  beta[1:4] ~ dmnorm(b0[], Vb[,])   ## prior regression params
+  prec ~ dgamma(s1, s2)             ## prior precision
+
+  for(i in 1:n){
+    mu[i] <- beta[1] 
+           + beta[2] * x1[i] 
+           + beta[3] * x2[i] 
+           + beta[4] * x1[i] * x2[i]   ## interaction term
+
+    y[i] ~ dnorm(mu[i], prec)
+  }
+}
+"
+
+```
+
+```{r}
+summary(data)
+
+data$n  <- n
+data$y  <- y
+data$x1 <- x1
+data$x2 <- x2
+
+data$b0 <- as.vector(rep(0,4))          # length 4
+data$Vb <- solve(diag(10000,4))         # 4×4 precision matrix
+
+data$s1 <- 0.1
+data$s2 <- 0.1
+
+data$x <- NULL
+
+summary(data)
+```
+
+```{r}
+nchain <- 3
+inits <- list()
+for(i in 1:nchain){
+  inits[[i]] <- list(
+    beta = rnorm(4, 0, 5),          # 4 regression coefficients
+    prec = runif(1, 1/100, 1/20)    # same precision init
+  )
+}
+```
+
+
+```{r}
+
+j.mod <- jags.model(
+  textConnection(multi_regression),
+  data = data,
+  inits = inits,
+  n.chains = nchain
+)
+
+j.out <- coda.samples(
+  model = j.mod,
+  variable.names = c("beta", "prec"),
+  n.iter = 2000
+)
+
+```
+
 -   Include relevant convergence diagnostics and plots.
+
+```{r}
+plot(j.out)                      # trace + density
+gelman.plot(j.out[, "beta[1]"])  # you can check each beta similarly
+
+
+
+GBR <- gelman.plot(j.out)
+burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[,,2]>1.05,1,any)),1)+1]
+
+
+if(length(burnin) == 0) burnin = 1
+## remove burn-in
+jags.burn <- window(j.out,start=burnin)
+
+plot(jags.burn)
+gelman.plot(jags.burn)
+```
+
+
 -   Report parameter summary table.
+
+```{r}
+
+summary(jags.burn)
+
+```
+
 -   Plot marginal and pairwise joint distributions. Indicate 'true' parameters on the plots
+
+```{r}
+
+```
+
+
 -   Compare the fit parameters to the “true” parameters we used to generate the pseudo-data. How well does the statistical analysis recover the true model?
 
 # Regression Credible Intervals
