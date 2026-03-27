@@ -480,10 +480,10 @@ data$S <- NULL
 summary(data)
 NormalMeanNsd <- "
 model {
-  mu ~ dnorm(mu0,T) # prior on the mean
+  mu ~ dnorm(mu0,T) 
   S ~ dgamma(a,b)
   for(i in 1:N){
-    X[i] ~ dnorm(mu,S) # data model
+    X[i] ~ dnorm(mu,S) 
   }
 }
 "
@@ -505,16 +505,18 @@ jags.outsd   <- coda.samples (model = j.modelsd,
 plot(jags.outsd)
 GBRsd <- gelman.plot(jags.outsd[, "mu"])
 
-## determine the first iteration after convergence
+
 burninsd <- GBRsd$last.iter[tail(which(GBRsd$shrink[,,2] > 1.1),1)+1]
-## check for no burn-in case
+
 if(length(burninsd) == 0) burnin = 1
-## remove burn-in
+
 jags.burnsd <- window(jags.outsd,start=burninsd)
 
 ```
 
 -   Explanation of your choice of prior on the precision
+
+0.001 & 0.001 are weak priors, but considering that I know little about the model, they are a good borad starting place. 
 
 -   Table of summary statistics for the posterior mean and standard deviation
 
@@ -527,11 +529,12 @@ tabsd
 ```
 
 -   Graph of parameter densities
-
 -   Plot of MCMC “history”
 
 ```{r}
 plot(jags.burnsd)
+gelman.plot(jags.burnsd[, "mu"])
+gelman.plot(jags.burnsd[, "S"])
 ```
 
 -   Length of your MCMC (i.e. the total number of “updates”), the number of chains, burnin, effective sample size, and any graphs/statistics/rationale you used to justify those settings
@@ -736,7 +739,7 @@ burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[,,2]>1.05,1,any)),1)+1]
 ```{r}
 
 if(length(burnin) == 0) burnin = 1
-## remove burn-in
+
 jags.burn <- window(var.out,start=burnin)
 
 plot(jags.burn)
@@ -769,17 +772,14 @@ summary(jags.burn)
 
 
 -   Compare the fit parameters to the “true” parameters we used to generate the pseudo-data. How well does the statistical analysis recover the true model?
-
+  			
 ```{r}
-
+b0
+b1
 ```
 
+Our model arrived at a similar slope and intercept to our input parameters, indicating a good job recovering the model. 
 
-n <- 100  			## define the sample size
-b0 <- 10				## define the intercept
-b1 <- 2					## define the slope
-beta <- matrix(c(b0,b1),2,1)		## put “true” regression parameters in a matrix
-sigma <- 4	
 
 # Multiple regression.
 
@@ -794,8 +794,8 @@ b0 <- 10				## define the intercept
 b1 <- 2					## define slope1
 b2 <- -4        ## define slope2
 b3 <- 0.5       ## define interaction
-beta <- matrix(c(b0,b1,b2,b3),4,1)		## put “true” regression parameters in a matrix
-sigma <- 4				## define the standard deviation
+beta <- matrix(c(b0,b1,b2,b3),4,1)		
+sigma <- 4				
 x1 <- runif(n,0,20)
 x2 <- runif(n,0,15)
 x <- cbind(rep(1,n),x1,x2,x1*x2)
@@ -815,14 +815,14 @@ Extend your univariate regression model to a multivariate regression.
 multi_regression <- "
 model{
 
-  beta[1:4] ~ dmnorm(b0[], Vb[,])   ## prior regression params
-  prec ~ dgamma(s1, s2)             ## prior precision
+  beta[1:4] ~ dmnorm(b0[], Vb[,])  
+  prec ~ dgamma(s1, s2)       
 
   for(i in 1:n){
     mu[i] <- beta[1] 
            + beta[2] * x1[i] 
            + beta[3] * x2[i] 
-           + beta[4] * x1[i] * x2[i]   ## interaction term
+           + beta[4] * x1[i] * x2[i]
 
     y[i] ~ dnorm(mu[i], prec)
   }
@@ -839,8 +839,8 @@ data$y  <- y
 data$x1 <- x1
 data$x2 <- x2
 
-data$b0 <- as.vector(rep(0,4))          # length 4
-data$Vb <- solve(diag(10000,4))         # 4×4 precision matrix
+data$b0 <- as.vector(rep(0,4))         
+data$Vb <- solve(diag(10000,4))  
 
 data$s1 <- 0.1
 data$s2 <- 0.1
@@ -855,8 +855,8 @@ nchain <- 3
 inits <- list()
 for(i in 1:nchain){
   inits[[i]] <- list(
-    beta = rnorm(4, 0, 5),          # 4 regression coefficients
-    prec = runif(1, 1/100, 1/20)    # same precision init
+    beta = rnorm(4, 0, 5),         
+    prec = runif(1, 1/100, 1/20)   
   )
 }
 ```
@@ -882,8 +882,8 @@ j.out <- coda.samples(
 -   Include relevant convergence diagnostics and plots.
 
 ```{r}
-plot(j.out)                      # trace + density
-gelman.plot(j.out[, "beta[1]"])  # you can check each beta similarly
+plot(j.out)                     
+gelman.plot(j.out[, "beta[1]"]) 
 
 
 
@@ -892,7 +892,7 @@ burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[,,2]>1.05,1,any)),1)+1]
 
 
 if(length(burnin) == 0) burnin = 1
-## remove burn-in
+
 jags.burn <- window(j.out,start=burnin)
 
 plot(jags.burn)
@@ -917,18 +917,13 @@ pn <- c("beta1", "beta2", "beta3", "beta4", "precision")
 
 for (i in 1:4) {
   hist(j.mat[, i],
-       main = pn[1])
+       main = pn[i])
   abline(v = beta[i], col = "red", lwd = 2)
 }
 
 
-for (i in 1:4) {
-  hist(j.mat[, i],
-       main = pn[5])
-  abline(v = beta[i], col = "red")
-}
-
-hist(j.mat[, 5])
+hist(j.mat[, 5],
+     main = "precision")
 abline(v = 1/sigma^2)
 
 for (r in 1:5) {
