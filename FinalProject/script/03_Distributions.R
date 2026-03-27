@@ -59,6 +59,20 @@ ggplot(depart_m, aes(x = d_leave)) +
     y = "Density"
   )
 
+ggplot(depart_m, aes(x = d_arrive)) +
+  geom_histogram(aes(y = ..density..), bins = 52, fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
+  coord_cartesian(xlim = c(1, 365)) +
+  geom_vline(xintercept =240) +
+  geom_vline(xintercept =136) +
+  theme_classic() +
+  labs(
+    title = "Arrival Timing Distribution",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Julian Day",
+    y = "Density"
+  )
+
 depart_early <- depart_m %>% 
   filter(d_leave < 240)
 
@@ -131,16 +145,18 @@ fish_depart <- SNSfshcln %>%
   filter(FishID %in% depart_m$animal_id & InitialRelease == 1)
 
 ggplot(fish_depart, aes(x = ForkLength)) +
-  geom_histogram(bins = 11) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
   theme_classic() +
   labs(
-    title = "TotalLength",
+    title = "Fork length",
     subtitle = "Shortnose Sturgeon from Penobscot River",
     x = "Length",
     y = "Frequency")
 
 ggplot(fish_depart, aes(x = Mass)) +
-  geom_histogram(bins = 11) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
   theme_classic() +
   labs(
     title = "Mass",
@@ -154,13 +170,16 @@ departfsh <- fish_depart %>%
 depart_full <- depart_m %>%
   left_join(departfsh, by = "animal_id") %>% 
   mutate(CaptureDate = as.POSIXct(CaptureDate, format = "%Y-%m-%d %H:%M:%S"),
-         day_cap = as.numeric(difftime(last_detection, CaptureDate, units = "days")))
+         day_cap = as.numeric(difftime(last_detection, CaptureDate, units = "days")),
+         day_syst = res_time_sec/86400) %>% 
+  filter(day_syst > 2)
 
 
 glimpse(depart_full)
 
 ggplot(depart_full, aes(x = day_cap)) +
-geom_histogram() +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
   theme_classic() +
   labs(
     title = "Days after capture",
@@ -168,6 +187,15 @@ geom_histogram() +
     x = "Mass",
     y = "Frequency")
 
+ggplot(depart_full, aes(x = day_syst)) +
+  geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
+  geom_density(color = "blue", size = 1) +
+  theme_classic() +
+  labs(
+    title = "Days in System",
+    subtitle = "Shortnose Sturgeon from Penobscot River",
+    x = "Mass",
+    y = "Frequency")
 
 
 

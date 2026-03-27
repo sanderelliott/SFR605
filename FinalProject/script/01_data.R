@@ -7,14 +7,14 @@ library(tidyverse)
 
 
 getwd()
-SNSdet <- read.csv("FinalProject/data/SNSdet_allyrs.csv")
+SNShst <- read.csv("FinalProject/data/SNShst_allyrs.csv")
 SNSfsh <- read.csv("FinalProject/data/SNSfsh_allyrs.csv")
 
-glimpse(SNSdet)
+glimpse(SNShst)
 
 ## Remove columns for types of tags not used in analysis
 
-SNSdetcln <- SNSdet %>% 
+SNSdetcln <- SNShst %>% 
   filter(Event == "Detection") %>% 
   dplyr::select(-Event, -Species, -tagtype, -SensorType, -avgSensorValue, -avgComputedValue, -Frequency, -avgPower,
          -LocationCode, -AntennaID, -AltFishID)
@@ -38,7 +38,7 @@ Detection_Description <- c("Date when event occurs", "ID code; One code per fish
 
 Detection_metatable <- cbind(Detection_Data, Detection_Unit, Detection_Description)
 
-
+glimpse(SNSfsh)
 
 SNSfshcln <- SNSfsh %>% 
   dplyr::select(FishID, TagID, CaptureDate, ForkLength, TotalLength, Mass, Recapture, InitialRelease, Sex)

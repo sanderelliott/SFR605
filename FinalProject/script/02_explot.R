@@ -80,10 +80,21 @@ ggplot(glat_sf, aes(x=detection_timestamp_utc, y=transmitter_id, color=array))+
 
 ## Create Events ----
 
-glat_events <- detection_events(glat_sf, location_col = "array") %>% 
+glat_events <- detection_events(glat_sf, location_col = "array", condense = TRUE) %>% 
   mutate(m_leave = month(last_detection),
          y_leave = year(last_detection), 
-         d_leave = yday(last_detection))
+         d_leave = yday(last_detection),
+         m_leave = month(last_detection),
+         y_arrive = year(first_detection),
+         d_arrive = yday(first_detection))
+
+glat_events2 <- detection_events(glat_sf, location_col = "array", condense = FALSE)
+
+arrive <- glat_events2 %>% 
+  filter(arrive == 1)
+
+depart <- glat_events2 %>% 
+  filter(depart == 1)
 
 penob_events <- glat_events %>%
   arrange(animal_id, last_detection) %>% 
