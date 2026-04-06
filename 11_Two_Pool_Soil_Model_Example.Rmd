@@ -1,0 +1,94 @@
+---
+title: "11_Two_Pool_Soil_Model_Example.Rmd"
+author: "SFR 605"
+output: html_document
+---
+
+# Set model inputs, parameters, and initial conditions
+```{r}
+# Input rate
+I = 0.00016 #mg C / g soil hr
+
+# Parameters
+Vm = 0.01 #mg C / mg C hr
+Km = 250 #mg C / g soil
+e = 0.31
+kb = 0.00028 #mg C / mg C hr
+
+# Initial conditions
+SOC = 50 #mg C/ g soil
+MIC = 2 #mg C/ g soil
+```
+
+
+# Simulate one timestep
+```{r}
+# Define Fluxes
+uptake = Vm*MIC*SOC/(Km+SOC)
+death = kb*MIC
+CO2out = (1-e)*uptake
+
+# Define ODEs
+dSOCdt = I - uptake + death
+dMICdt = uptake - death - CO2out
+
+# Initial state plus change in state
+SOC + dSOCdt 
+MIC + dMICdt
+```
+
+# Create a loop to simulate multiple timesteps
+```{r}
+# Number of iterations
+iterations = 1000000  # Set the number of iterations (hours) you want to run
+iterations/(24*365) # The number of years you are running the model for
+
+# Create vectors to store SOC, MIC, and CO2out at each iteration
+SOC_values <- numeric(iterations)
+MIC_values <- numeric(iterations)
+CO2out_values <- numeric(iterations)
+
+# Loop to execute the model and update the pool values
+for (i in 1:iterations) {
+  
+  # Calculate fluxes
+  uptake = Vm*MIC*SOC/(Km+SOC)
+  death = kb*MIC
+  CO2out = (1-e)*uptake
+
+  # Define ODEs
+  dSOCdt = I - uptake + death
+  dMICdt = uptake - death - CO2out
+  
+  # Update SOC and MIC
+  SOC = SOC + dSOCdt  # Update SOC based on the calculated change
+  MIC = MIC + dMICdt  # Update MIC based on the calculated change
+  
+  # Save current values to vectors
+  SOC_values[i] <- SOC
+  MIC_values[i] <- MIC
+  CO2out_values[i] <- CO2out
+}
+
+# Plot the results using facets
+library(ggplot2)
+
+# Create a data frame for plotting
+data <- data.frame(
+  iteration = rep(1:iterations, 3),
+  value = c(SOC_values, MIC_values, CO2out_values),
+  variable = rep(c("SOC", "MIC", "CO2out"), each = iterations)
+)
+
+# Create the plot with facets
+ggplot(data, aes(x = iteration, y = value)) +
+  geom_line(aes(color = variable), size = 1) +
+  facet_wrap(~ variable, scales = "free_y") +  # Separate plots for each variable
+  labs(
+    title = "SOC, MIC, and CO2out over Time",
+    x = "Iteration",
+    y = "Value"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
