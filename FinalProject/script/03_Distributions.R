@@ -2,7 +2,7 @@
 
 ## KS tests
 
-yrs <- unique(penob_events$y_leave)
+yrs <- unique(snsdep$year)
 yrs
 
 
@@ -139,12 +139,13 @@ max(depart_fall$d_leave)
 depart_ssn <- depart_m %>% 
   mutate(season <- case_when())
 
+
 ## Fish in departures
 
 fish_depart <- SNSfshcln %>% 
-  filter(FishID %in% depart_m$animal_id & InitialRelease == 1)
+  filter(FishID %in% snsdep$animal_id)
 
-ggplot(fish_depart, aes(x = ForkLength)) +
+ggplot(snsdep, aes(x = ForkLength)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
   geom_density(color = "blue", size = 1) +
   theme_classic() +
@@ -154,7 +155,7 @@ ggplot(fish_depart, aes(x = ForkLength)) +
     x = "Length",
     y = "Frequency")
 
-ggplot(fish_depart, aes(x = Mass)) +
+ggplot(snsdep, aes(x = Mass)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
   geom_density(color = "blue", size = 1) +
   theme_classic() +
@@ -164,20 +165,8 @@ ggplot(fish_depart, aes(x = Mass)) +
     x = "Mass",
     y = "Frequency")
 
-departfsh <- fish_depart %>%
-  rename(animal_id = FishID)
 
-depart_full <- depart_m %>%
-  left_join(departfsh, by = "animal_id") %>% 
-  mutate(CaptureDate = as.POSIXct(CaptureDate, format = "%Y-%m-%d %H:%M:%S"),
-         day_cap = as.numeric(difftime(last_detection, CaptureDate, units = "days")),
-         day_syst = res_time_sec/86400) %>% 
-  filter(day_syst > 2)
-
-
-glimpse(depart_full)
-
-ggplot(depart_full, aes(x = day_cap)) +
+ggplot(snsdep, aes(x = day_cap)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
   geom_density(color = "blue", size = 1) +
   theme_classic() +
@@ -187,7 +176,7 @@ ggplot(depart_full, aes(x = day_cap)) +
     x = "Mass",
     y = "Frequency")
 
-ggplot(depart_full, aes(x = day_syst)) +
+ggplot(snsdep, aes(x = day_syst)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
   geom_density(color = "blue", size = 1) +
   theme_classic() +
@@ -196,7 +185,6 @@ ggplot(depart_full, aes(x = day_syst)) +
     subtitle = "Shortnose Sturgeon from Penobscot River",
     x = "Mass",
     y = "Frequency")
-
 
 
 

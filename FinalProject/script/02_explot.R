@@ -4,28 +4,6 @@ library(raster)
 
 glimpse(SNSdetcln)
 
-## put into glatos friendly format with sf coords column ----
-
-detglat_sf <- SNSdetcln %>% 
-  mutate(
-    detection_timestamp_utc = as.POSIXct(LastTS),
-    transmitter_id = as.character(IDCode),
-    transmitter_codespace = as.character(TagId),
-    receiver_sn = RxID,
-    animal_id = FishID
-  ) %>% 
-  filter(!is.na(Easting)) %>% 
-  st_as_sf(coords = c("Easting", "Northing"), crs = 26919) %>%   # UTM 19N
-  st_transform(4326) %>%                                         # WGS84 lat/long
-  mutate(
-    deploy_long = st_coordinates(.)[,1],
-    deploy_lat  = st_coordinates(.)[,2]
-  ) %>% 
-  filter(deploy_lat < 45.1) ## some false detections way north
-
-glimpse(detglat_sf)
-
-
 bb <- st_bbox(detglat_sf)
 osm <- osm.raster(bb, type = "cartolight")
 osm_df <- as.data.frame(osm, xy = TRUE)
@@ -79,36 +57,6 @@ ggplot(glat_sf, aes(x=detection_timestamp_utc, y=transmitter_id, color=array))+
 
 
 ## Create Events ----
-
-glat_events <- detection_events(glat_sf, location_col = "array", condense = TRUE) %>% 
-  mutate(m_leave = month(last_detection),
-         y_leave = year(last_detection), 
-         d_leave = yday(last_detection),
-         m_leave = month(last_detection),
-         y_arrive = year(first_detection),
-         d_arrive = yday(first_detection))
-
-glat_events2 <- detection_events(glat_sf, location_col = "array", condense = FALSE)
-
-arrive <- glat_events2 %>% 
-  filter(arrive == 1)
-
-depart <- glat_events2 %>% 
-  filter(depart == 1)
-
-penob_events <- glat_events %>%
-  arrange(animal_id, last_detection) %>% 
-  group_by(animal_id) %>%
-  mutate(is_last = row_number() == n()) %>%   # TRUE only for final row
-  filter(!(is_last & location == "penob_riv")) %>%  # drop only final penob_riv
-  dplyr::select(-is_last) %>%
-  ungroup()
-
-
-depart_m <- penob_events %>% 
-  filter(location == "penob_riv") %>% 
-  mutate(m_leave = factor(m_leave, levels = 1:12, labels = month.abb))
-
 
 ggplot(depart_m, aes(x = d_leave)) +
   geom_histogram(bins = 52, boundary = 0.5) +
@@ -172,8 +120,6 @@ ggplot(depart_m, aes(x = d_leave)) +
 
 ## Abacus plot of animals in penob events
 
-penob_cyc <- penob_events %>% 
-  filter(animal_id %in% depart_m$animal_id)
 
 ggplot(penob_cyc, aes(
   y = animal_id,
