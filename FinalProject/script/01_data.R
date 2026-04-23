@@ -212,10 +212,15 @@ max(depart_summer$d_leave)
 min(depart_fall$d_leave)
 max(depart_fall$d_leave)
 
+
+
 depart_ssn <- depart_full %>% 
   mutate(season = case_when(d_leave > 240 ~ "fall",
                             d_leave < 136 ~ "spring",
-                            d_leave > 136 & d_leave < 240 ~ "summer")) %>% 
+                            d_leave > 136 & d_leave < 240 ~ "summer"),
+         arrive_ssn = case_when(d_arrive >= 240 ~ "fall",
+                                d_arrive <= 136 ~ "spring",
+                                d_arrive > 136 & d_arrive < 240 ~ "summer")) %>% 
   rename(year = y_leave)
 glimpse(depart_ssn)
 
@@ -265,8 +270,23 @@ ggplot(seasonal_means, aes(x = year, y = seasonal_mean, color = season)) +
 glimpse(depart_ssn)
 glimpse(seasonal_means)
 
+flow_wide <- seasonal_means %>%
+  dplyr::select(-n_days) %>% 
+  tidyr::pivot_wider(
+    names_from = season,
+    values_from = seasonal_mean,
+    names_glue = "{season}_flow"
+  ) %>% 
+  mutate(
+    spring_flow_z = as.numeric(scale(spring_flow)),
+    summer_flow_z = as.numeric(scale(summer_flow)),
+    fall_flow_z   = as.numeric(scale(fall_flow))
+  )
+glimpse(flow_wide)
+
 depart_flow <- depart_ssn %>%
-  left_join(seasonal_means, by = c("year", "season"))
+  left_join(flow_wide %>% 
+              dplyr::select(year, spring_flow_z, summer_flow_z, fall_flow_z), by = "year")
 
 glimpse(depart_flow)
 
@@ -275,9 +295,9 @@ unique(depart_flow$season)
 unique(depart_flow$animal_id)
 
 snsdep <- depart_flow %>% 
-  dplyr::select(season, animal_id, year, seasonal_mean, ForkLength, Mass, day_syst, day_cap) %>% 
-  rename(mean_flow = seasonal_mean) %>% 
-  filter(!is.na(ForkLength))
+  filter(!is.na(Mass))
+
+
 
 
 

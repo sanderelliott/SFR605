@@ -8,7 +8,7 @@ bb <- st_bbox(detglat_sf)
 osm <- osm.raster(bb, type = "cartolight")
 osm_df <- as.data.frame(osm, xy = TRUE)
 
-detglat_sf_3857 <- st_transform(detglat_sf, 3857)
+
 
 ggplot() +
   geom_raster(data = osm_df,
@@ -23,17 +23,6 @@ ggplot() +
        y = "LAT")
 
 ## Create Three arrays ----
-
-glat_sf <- detglat_sf %>% 
-  mutate(array = case_when(deploy_lat < 44.49 & deploy_long > -69.2 ~ 
-                             "penob_bay",
-                           deploy_lat > 44.49 & deploy_long > -69.2 ~
-                             "penob_riv",
-                           deploy_long < -69.2 ~
-                             "ken_r"))
-
-
-detglat_sf_3857a <- st_transform(glat_sf, 3857)
 
 ggplot() +
   geom_raster(data = osm_df,
