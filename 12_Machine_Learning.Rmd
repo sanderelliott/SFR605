@@ -24,7 +24,8 @@ library(here)
 The aim of this tutorial is to introduce machine learning methods for ecological prediction, with a focus on random forests and model interpretation. We will use soil carbon data from the National Ecological Observatory Network (NEON) to predict soil organic carbon (SOC) concentration from environmental and soil predictors. Along the way we will compare our ML model to the linear mixed models covered earlier in the course and learn to interpret black-box predictions using Shapley values.
 
 `patchwork` lets you combine ggplot objects using `+` for side-by-side layouts and `/` for stacked layouts. We will use it throughout to compare plots. For example:
-```
+
+```         
 p1 + p2                          ## side by side
 p1 / p2                          ## stacked
 p1 + p2 + plot_annotation(title = "My combined figure")
@@ -40,16 +41,16 @@ summary(soc_data)
 
 The dataset contains soil physicochemical properties and environmental covariates measured at NEON soil sampling locations across the United States. The variables are:
 
-| Variable | Description | Role |
-|---|---|---|
-| `soc_pct` | Soil organic carbon (%) | Response |
-| `mat_c` | Mean annual temperature (°C) | Predictor |
-| `map_mm` | Mean annual precipitation (mm) | Predictor |
-| `clay_pct` | Soil clay content (%) | Predictor |
-| `sand_pct` | Soil sand content (%) | Predictor |
-| `bulk_density` | Soil bulk density (g/cm³) | Predictor |
-| `horizon` | Soil horizon (O, A, B) | Grouping |
-| `site_id` | NEON site identifier | Grouping |
+| Variable       | Description                    | Role      |
+|----------------|--------------------------------|-----------|
+| `soc_pct`      | Soil organic carbon (%)        | Response  |
+| `mat_c`        | Mean annual temperature (°C)   | Predictor |
+| `map_mm`       | Mean annual precipitation (mm) | Predictor |
+| `clay_pct`     | Soil clay content (%)          | Predictor |
+| `sand_pct`     | Soil sand content (%)          | Predictor |
+| `bulk_density` | Soil bulk density (g/cm³)      | Predictor |
+| `horizon`      | Soil horizon (O, A, B)         | Grouping  |
+| `site_id`      | NEON site identifier           | Grouping  |
 
 ## Missing values
 
@@ -69,7 +70,11 @@ cat("Observations removed:", nrow(soc_data) - nrow(soc_clean), "\n")
 ```
 
 ### Task 1
+
 How many observations have missing values? Which variables are affected? What assumption does listwise deletion make about the mechanism of missingness?
+
+19 observations had missing values. Clay content, sand content, and bulk density were affected. It assumes that missingness indicates that the value was not measured and that the whole row is impacted by that missing value. 
+
 
 ## Response distribution
 
@@ -82,7 +87,10 @@ ggplot(soc_clean, aes(x = soc_pct)) +
 ```
 
 ### Task 2
+
 Describe the distribution of `soc_pct`. Is it symmetric? Random forests are generally robust to skewed responses — note any concerns but proceed without transformation for now.
+
+It is right skewed with many 0s. 
 
 ## Predictor relationships
 
@@ -94,7 +102,12 @@ soc_clean %>%
 ```
 
 ### Task 3
+
 From the pairs plot, identify: (a) one predictor that appears to have a strong relationship with `soc_pct`, and (b) two predictors that are correlated with each other. Note: correlated predictors are handled differently by random forests than by linear models. We will return to this when we discuss variable importance.
+
+a) bulk_density has a relationship with soc_pct
+
+b) clay_pct and sand_pct are correlated, negatively. 
 
 # Fitting a Random Forest
 
@@ -135,7 +148,8 @@ rf_fit
 ```
 
 ### Task 4
-Examine the `ranger` output. (a) What is the OOB prediction error (reported as MSE)? Convert it to RMSE and compare it to the standard deviation of `soc_pct` in the training set. A useful heuristic: RMSE / SD < 0.5 suggests reasonable predictive skill. (b) What is the OOB R²? How does "out-of-bag" differ from a held-out test set as a means of assessing model performance?
+
+Examine the `ranger` output. (a) What is the OOB prediction error (reported as MSE)? Convert it to RMSE and compare it to the standard deviation of `soc_pct` in the training set. A useful heuristic: RMSE / SD \< 0.5 suggests reasonable predictive skill. (b) What is the OOB R²? How does "out-of-bag" differ from a held-out test set as a means of assessing model performance?
 
 ## Hyperparameter tuning
 
@@ -169,6 +183,7 @@ data.frame(mtry = mtry_vals, oob_rmse = sqrt(oob_errors)) %>%
 ```
 
 ### Task 5
+
 (a) What is the optimal `mtry` based on OOB error? (b) Refit the random forest using the optimal `mtry`, storing it as `rf_fit_tuned`. Evaluate it on the test set and compare test R² and RMSE to the default model. How much does performance change? (c) Why is it acceptable to use OOB error for tuning `mtry` rather than needing a separate validation set?
 
 # Variable Importance
@@ -188,6 +203,7 @@ vip(rf_fit,
 ```
 
 ### Task 6
+
 Interpret the variable importance plot. (a) Which predictor has the highest importance? Does this match your expectation from the pairs plot (Task 3)? (b) `bulk_density` dominates both importance metrics. Is this ecologically meaningful, or does it suggest a potential problem? Consider: bulk density is known to be strongly negatively correlated with SOC (high organic matter soils tend to have low bulk density). Does this make bulk density a true *driver* of SOC, or more of a co-measurement of the same underlying property? Would you include it in a predictive model?
 
 ## Impurity-based importance
@@ -223,6 +239,7 @@ data.frame(
 ```
 
 ### Task 7
+
 Do the two importance methods agree? If they disagree for any predictor, which method do you trust more and why? Note: impurity-based importance is known to be biased toward high-cardinality continuous variables (i.e., variables with a high percentage of unique values). Does that explain any discrepancy you see?
 
 # Partial Dependence Plots
@@ -244,6 +261,7 @@ autoplot(pdp_top, smooth = TRUE) +
 ```
 
 ### Task 8
+
 Using the code above as a template, make PDP plots for two more predictors of your choice. For each of the three PDPs (including bulk density): (a) describe the shape of the relationship (linear, unimodal, threshold, etc.), and (b) describe where uncertainty is widest and why that might be.
 
 ## Two-way interaction PDP
@@ -268,6 +286,7 @@ ggplot(pdp_2d, aes(x = mat_c, y = map_mm, fill = yhat)) +
 ```
 
 ### Task 9
+
 Using the two-way PDP above as a template, generate a two-way PDP for `bulk_density` and `mat_c`. Does the effect of bulk density on SOC appear to depend on temperature, or is it consistent across the temperature gradient?
 
 # Evaluating on the Test Set
@@ -300,11 +319,12 @@ p_rf_obs
 ```
 
 ### Task 10
+
 (a) Compare the test set R² to the OOB R² from the model fit above. Are they similar? If the test R² is substantially lower, what might explain the gap? (b) Are there systematic patterns in the residuals, i.e., does the model consistently over- or under-predict at certain SOC values?
 
 # Comparison to a Linear Mixed Model
 
-Comparing an ML model to a simpler baseline is one of the most informative things we can do. Here we fit a linear mixed model with `site_id` as a random effect, the same structure you explored earlier in the course. Because our predictors are on very different scales (`map_mm` ranges from ~100 to 2400 while `bulk_density` ranges from ~0 to 2), we rescale before fitting. Note that we did not need to do this for the random because random forests are scale-invariant (they only use the rank order of splits). Linear models are not, because coefficients depend directly on the units of the predictors.
+Comparing an ML model to a simpler baseline is one of the most informative things we can do. Here we fit a linear mixed model with `site_id` as a random effect, the same structure you explored earlier in the course. Because our predictors are on very different scales (`map_mm` ranges from \~100 to 2400 while `bulk_density` ranges from \~0 to 2), we rescale before fitting. Note that we did not need to do this for the random because random forests are scale-invariant (they only use the rank order of splits). Linear models are not, because coefficients depend directly on the units of the predictors.
 
 ```{r}
 train_scaled <- train %>% mutate(across(all_of(predictors), scale))
@@ -340,6 +360,7 @@ p_rf_obs + p_lmm_obs +
 ```
 
 ### Task 11
+
 (a) What is the test set performance of each model? (b) Do LMM assumptions appear to be met based on your exploration of the data above? (c) Under what circumstances might you choose the RF over the LMM, or vice versa? Note: the regularization that keeps the LMM from overfitting (REML shrinkage on random effects) is analogous to the regularization penalty in LASSO/ridge regression. The random forest achieves implicit regularization through bagging and random feature selection.
 
 # SHAP Values
@@ -349,7 +370,7 @@ p_rf_obs + p_lmm_obs +
 Before computing SHAP values, it is worth being precise about what question we are asking.
 
 | Level | Question | Method |
-|---|---|---|
+|------------------------|------------------------|------------------------|
 | **Global** | Which predictors matter most, on average? | Variable importance, PDPs |
 | **Global** | What is the average effect of predictor X? | Partial dependence plot |
 | **Local** | Why did the model make *this* prediction? | SHAP waterfall plot |
@@ -406,6 +427,7 @@ sv_importance(shap_rf, kind = "bar", fill = "#378ADD") +
 ```
 
 ### Task 12
+
 Compare this SHAP importance ranking to the permutation importance ranking from Task 6. Do they agree? If any predictors change rank substantially, note which ones and suggest why. Think about how correlated predictors are handled differently by permutation importance vs. SHAP.
 
 ## SHAP beeswarm plot
@@ -419,6 +441,7 @@ sv_importance(shap_rf, kind = "beeswarm", alpha = 0.5) +
 ```
 
 ### Task 13
+
 Using `sv_importance()` with `kind = "beeswarm"`, generate the equivalent beeswarm plot for the `xgboost` model (`shap_xgb` is already computed above). Use `patchwork` to place both plots side by side, then describe any differences in the direction or magnitude of effects between the two models.
 
 # Local Interpretation
@@ -448,6 +471,7 @@ print(test[low_soc_i, predictors])
 ```
 
 ### Task 14
+
 (a) For each waterfall plot, which predictors contributed to pushing the prediction above the baseline vs. below? (b) Choose two intermediate SOC points from the dataset and make waterfall plots for them. How do the predictor contributions compare with the high and low SOC waterfall plots?
 
 ## Force plot
@@ -461,6 +485,7 @@ sv_force(shap_rf_test, row_id = high_soc_i) +
 ```
 
 ### Task 15
+
 Generate the force plot for the low-SOC observation. Which format (waterfall or force) do you find more intuitive for communicating results to a non-technical audience such as a land manager? Which would you include in a scientific paper?
 
 # SHAP Dependence Plots vs. Partial Dependence Plots
@@ -496,6 +521,7 @@ p_pdp + p_shap +
 ```
 
 ### Task 16
+
 Following the example above for `mat_c`, generate a side-by-side PDP and SHAP dependence plot for `bulk_density`. (a) Do the two methods show the same general shape? (b) Color the SHAP dependence plot by `mat_c`. Does the effect of bulk density appear to vary with temperature? Describe any interaction pattern you see and suggest an ecological mechanism.
 
 # Cross-Model Comparison
@@ -524,6 +550,7 @@ data.frame(
 ```
 
 ### Task 17
+
 Do the two models agree on which predictors are most important? Identify any predictors ranked substantially differently across models. When would you be *more* concerned about algorithmic instability?
 
 # Limitations and Responsible Use of SHAP
@@ -554,4 +581,5 @@ data.frame(
 ```
 
 ### Task 18
+
 The table above compares SHAP values for a single observation across two random forest fits that differ only in their random seed. (a) How large are the differences? Are they ecologically meaningful? (b) Implement a robustness check: refit the random forest three more times with seeds 111, 222, and 333. For each fit, compute SHAP values on the training set and extract the SHAP value for `bulk_density` for observation 1. Report the mean and standard deviation across all five fits (including seeds 605 and 999). Are there any conclusions you can be confident about?
