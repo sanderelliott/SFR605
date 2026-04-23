@@ -109,6 +109,8 @@ ggplot(depart_m, aes(x = d_leave)) +
 
 ## Abacus plot of animals in penob events
 
+penob_cyc <- glat_events %>% 
+  filter(animal_id %in% penob_events$animal_id)
 
 ggplot(penob_cyc, aes(
   y = animal_id,

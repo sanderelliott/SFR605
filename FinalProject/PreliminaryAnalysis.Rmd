@@ -9,15 +9,29 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Packages
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(glatos)
+library(sf)
+library(tidyverse)
+library(dataRetrieval)
+library(rosm)
+library(raster) 
+library(brms)
+```
+
 # Data Prep
 
 ## Raw Data
 
 ```{r}
-SNShst <- read.csv("FinalProject/data/SNShst_allyrs.csv")
-SNSfsh <- read.csv("FinalProject/data/SNSfsh_allyrs.csv")
-glimpse(snshst) ## Detection history
-glimpse(snsfsh) ## Fish information
+SNShst <- read.csv("data/SNShst_allyrs.csv")
+SNSfsh <- read.csv("data/SNSfsh_allyrs.csv")
+glimpse(SNShst) ## Detection history
+glimpse(SNSfsh) ## Fish information
 ```
 
 ## Detection History
@@ -29,10 +43,8 @@ SNSdetcln <- SNShst %>%
   filter(Event == "Detection") %>% 
   dplyr::select(-Event, -Species, -tagtype, -SensorType, -avgSensorValue, -avgComputedValue, -Frequency, -avgPower,
          -LocationCode, -AntennaID, -AltFishID)
-glimpse(SNSdetcln)
 
 ```
-
 
 ### Prep Glatos - Convert coordiantes and time
 
@@ -54,7 +66,18 @@ detglat_sf <- SNSdetcln %>%
   ) %>% 
   filter(deploy_lat < 45.1) ## some false detections way north
 
-glimpse(detglat_sf)
+glat_sf <- detglat_sf %>% 
+  mutate(array = case_when(deploy_lat < 44.49 & deploy_long > -69.2 ~ 
+                             "penob_bay",
+                           deploy_lat > 44.49 & deploy_long > -69.2 ~
+                             "penob_riv",
+                           deploy_long < -69.2 ~
+                             "ken_r"))
+
+
+detglat_sf_3857a <- st_transform(glat_sf, 3857)
+
+glimpse(glat_sf)
 ```
 
 ### Use GLATOS
@@ -68,6 +91,26 @@ glat_events <- detection_events(glat_sf, location_col = "array", condense = TRUE
          y_arrive = year(first_detection),
          d_arrive = yday(first_detection))
 glimpse(glat_events)
+```
+
+### Plot Arrays
+
+```{r}
+bb <- st_bbox(detglat_sf)
+osm <- osm.raster(bb, type = "cartolight")
+osm_df <- as.data.frame(osm, xy = TRUE)
+
+ggplot() +
+  geom_raster(data = osm_df,
+              aes(x = x, y = y,
+                  fill = rgb(layer.1/255, layer.2/255, layer.3/255))) +
+  scale_fill_identity() +
+  geom_sf(data = detglat_sf_3857a, aes(color = array)) +
+  coord_sf(crs = 3857) +
+  theme_minimal() +
+  labs(title = "Detection Locations",
+       x = "LONG",
+       y = "LAT")
 ```
 
 ### Get Penobscot Departures
@@ -84,14 +127,34 @@ penob_events <- glat_events %>%
 
 ```
 
+### Plot Events
+
+```{r}
+penob_cyc <- glat_events %>% 
+  filter(animal_id %in% penob_events$animal_id)
+
+ggplot(penob_cyc, aes(
+  y = animal_id,
+  x = first_detection,
+  xend = last_detection,
+  yend = animal_id,
+  color = location)) +
+  geom_segment(linewidth = 1.2, alpha = 0.8) +
+  labs(
+    x = "Detection Interval",
+    y = "Transmitter ID",
+    color = "Location") +
+  geom_point(aes(x = first_detection), size = 2) + 
+  geom_point(aes(x = last_detection), size = 2) +
+  theme_classic()
+```
+
 
 ## Fish
 
 ### Keep important data
 
 ```{r}
-glimpse(SNSfsh)
-
 SNSfshcln <- SNSfsh %>% 
   dplyr::select(FishID, TagID, CaptureDate, ForkLength, TotalLength, Mass, Recapture, InitialRelease, Sex)
 
@@ -101,7 +164,7 @@ SNSfshcln <- SNSfsh %>%
 
 ```{r}
 departfsh <- SNSfshcln %>% 
-  filter(FishID %in% depart_m$animal_id & InitialRelease == 1)%>%
+  filter(FishID %in% penob_events$animal_id & InitialRelease == 1)%>%
   rename(animal_id = FishID)
 ```
 
@@ -109,7 +172,7 @@ departfsh <- SNSfshcln %>%
 
 ### Join fish and detections
 
-```{r}
+```{r warning=FALSE}
 depart_full <- penob_events %>%
   left_join(departfsh, by = "animal_id") %>% 
   mutate(CaptureDate = as.POSIXct(CaptureDate, format = "%Y-%m-%d %H:%M:%S"),
@@ -133,19 +196,387 @@ depart_ssn <- depart_full %>%
 glimpse(depart_ssn)
 ```
 
+## Flow
+
+### Raw USGS stream gauge
+
+```{r}
+API_USGS_PAT = "UMOm8b4Xd4NQmdHXvgJgloj4ROEJXneryqIYXVhU"
+
+
+site <- "01036390"
+pcode <- "00065"  # gage height
+
+raw <- readNWISdv("01036390", "00065", "1900-01-01", Sys.Date())
+
+```
+
+### Add seasons
+
+```{r}
+dat <- raw %>%
+  rename(gage_height = X_00065_00003) %>% 
+  mutate(
+    jday = yday(Date),
+    year = year(Date),
+    season = case_when(
+      jday >= 87  & jday <= 136 ~ "spring",
+      jday >= 137 & jday <= 217 ~ "summer",
+      jday >= 254 & jday <= 321 ~ "fall",
+      TRUE ~ NA_character_)
+  )
+
+season_dat <- dat %>% filter(!is.na(season))
+
+seasonal_means <- season_dat %>%
+  group_by(year, season) %>%
+  summarize(
+    seasonal_mean = mean(gage_height, na.rm = TRUE),
+    n_days = n(),
+    .groups = "drop"
+  )
+
+
+ggplot(seasonal_means, aes(x = year, y = seasonal_mean, color = season)) +
+  geom_line() +
+  theme_bw() +
+  labs(title = "Seasonal Mean Gage Height\nUSGS 01036390 Penobscot River at Eddington, ME",
+       y = "Gage Height (ft)")
+```
+
+### Scale flow seasons
+
+```{r}
+
+flow_wide <- seasonal_means %>%
+  dplyr::select(-n_days) %>% 
+  tidyr::pivot_wider(
+    names_from = season,
+    values_from = seasonal_mean,
+    names_glue = "{season}_flow"
+  ) %>% 
+  mutate(
+    spring_flow_z = as.numeric(scale(spring_flow)),
+    summer_flow_z = as.numeric(scale(summer_flow)),
+    fall_flow_z   = as.numeric(scale(fall_flow))
+  )
+glimpse(flow_wide)
+
+depart_flow <- depart_ssn %>%
+  left_join(flow_wide %>% 
+              dplyr::select(year, spring_flow_z, summer_flow_z, fall_flow_z), by = "year")
+
+glimpse(depart_flow)
+
+```
+
+## Final Dataset
+
+```{r}
+snsdep <- depart_flow %>% 
+  filter(!is.na(Mass))
+glimpse(snsdep)
+```
+
+# Model
+
+## Order categorical variables
+
+```{r}
+snsdep$season <- factor(snsdep$season, levels = c("spring", "summer", "fall"))
+snsdep$arrive_ssn <- factor(snsdep$arrive_ssn,
+                            levels = c("summer", "spring", "fall"))
+```
+
+## Set Priors
+
+```{r}
+priors <- c(
+  # Fixed effects
+  set_prior("normal(0, 1)", class = "b", dpar = "musummer"),
+  set_prior("normal(0, 1)", class = "b", dpar = "mufall"),
+  
+  # Intercepts
+  set_prior("normal(0, 1)", class = "Intercept", dpar = "musummer"),
+  set_prior("normal(0, 1)", class = "Intercept", dpar = "mufall"),
+  
+  # Random effect SDs
+  set_prior("exponential(1)", class = "sd", dpar = "musummer"),
+  set_prior("exponential(1)", class = "sd", dpar = "mufall")
+)
+```
+
+## Models
+
+```{r message=FALSE, warning=FALSE, results='hide'}
+fit_simp <- brm(
+  season ~ arrive_ssn + (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical(),
+  prior = priors,   # the ones we already built
+  chains = 4, cores = 4, iter = 6000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
+)
+
+fit_spring_z <- brm(
+  season ~ spring_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical(),
+  chains = 4, iter = 6000, cores = 4,
+  control = list(adapt_delta = 0.99)
+)
+
+summary(fit_spring_z)
+
+fit_summer_z <- brm(
+  season ~ summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical()
+)
+
+summary(fit_summer_z)
+
+fit_fall_z <- brm(
+  season ~ fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical()
+)
+
+summary(fit_fall_z)
+
+loo(fit_spring_z, fit_summer_z, fit_fall_z)
 
 
 
+fit_spring_summer_z <- brm(
+  season ~ spring_flow_z * summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical()
+)
+
+
+fit_spring_fall_z <- brm(
+  season ~ spring_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical()
+)
+
+fit_summer_fall_z <- brm(
+  season ~ summer_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+    (1 | animal_id) + (1 | year),
+  data = snsdep,
+  family = categorical()
+)
+
+```
+
+## Compare Models
+
+```{r warning=FALSE, message=FALSE}
+loo(fit_simp, fit_spring_z, fit_summer_z, fit_fall_z, fit_spring_summer_z, fit_spring_fall_z,
+    fit_summer_fall_z)
+```
+
+# Results Figures
+
+## Summary of two best models
+
+```{r}
+summary(fit_simp) ## best overall
+summary(fit_summer_z) ## best with variables
+```
+
+## Arrival season (Figure 1)
+
+```{r}
+coefs <- summary(fit_simp)$fixed
+
+# Keep only arrival-season effects
+arrive_coefs <- coefs[grep("arrive_ssn", rownames(coefs)), ]
+nice_names <- c(
+  "musummer_arrive_ssnspring" = "Arrive Spring → Depart Summer",
+  "musummer_arrive_ssnfall"   = "Arrive Fall → Depart Summer",
+  "mufall_arrive_ssnspring"   = "Arrive Spring → Depart Fall",
+  "mufall_arrive_ssnfall"     = "Arrive Fall → Depart Fall"
+)
+
+rownames(arrive_coefs) <- nice_names[rownames(arrive_coefs)]
+
+
+par(mar = c(6, 15, 4, 2))
+
+# Reverse order so the first coefficient appears at the top
+k <- nrow(arrive_coefs)
+y <- k:1
+
+plot(arrive_coefs[, "Estimate"], y,
+     xlab = "Effect on log-odds (vs spring)",
+     ylab = "",
+     yaxt = "n",
+     pch = 19,
+     xlim = range(c(arrive_coefs[, "l-95% CI"], arrive_coefs[, "u-95% CI"])),
+     main = "Arrival-season effects on departure timing")
+
+segments(arrive_coefs[, "l-95% CI"], y,
+         arrive_coefs[, "u-95% CI"], y)
+
+axis(2, at = y, labels = rownames(arrive_coefs), las = 1)
+
+abline(v = 0, col = "goldenrod", lty = 2)
+
+
+```
+
+## Flow anomolies (Figure 2)
+
+```{r}
+coefs <- summary(fit_summer_z)$fixed
+
+flow_coefs <- coefs[grep("summer_flow_z", rownames(coefs)), ]
+flow_coefs
+
+nice_names <- c(
+  "musummer_summer_flow_z" = "Effect of flow on Summer vs Spring",
+  "mufall_summer_flow_z"   = "Effect of flow on Fall vs Spring"
+)
+
+rownames(flow_coefs) <- nice_names[rownames(flow_coefs)]
+
+par(mar = c(6, 18, 4, 2))
+
+k <- nrow(flow_coefs)
+y <- k:1
+
+plot(flow_coefs[, "Estimate"], y,
+     xlab = "Effect of summer flow anomaly (log-odds)",
+     ylab = "",
+     yaxt = "n",
+     pch = 19,
+     xlim = range(c(flow_coefs[, "l-95% CI"], flow_coefs[, "u-95% CI"])),
+     main = "Flow anomaly effects on departure timing")
+
+segments(flow_coefs[, "l-95% CI"], y,
+         flow_coefs[, "u-95% CI"], y)
+
+axis(2, at = y, labels = rownames(flow_coefs), las = 1)
+
+abline(v = 0, col = "goldenrod", lty = 2)
+
+## Boxplot
+
+#boxplot(summer_flow_z ~ season, data=snsdep,
+#       xlab="Departure season",
+ #       ylab="Summer flow anomaly")
+
+
+```
+
+## Random effects Year (Figure 3) & Individual (Figure 4)
+
+```{r}
+year_counts <- table(snsdep$year)
+id_counts <- table(snsdep$animal_id)
+
+re <- ranef(fit_simp, summary = TRUE)
+
+year_summer <- as.data.frame(re$year[, , "musummer_Intercept"]) %>%
+  mutate(year = rownames(re$year))
+
+year_fall <- as.data.frame(re$year[, , "mufall_Intercept"]) %>%
+  mutate(year = rownames(re$year))
+
+id_summer <- as.data.frame(re$animal_id[, , "musummer_Intercept"]) %>%
+  mutate(animal_id = rownames(re$animal_id))
+
+id_fall <- as.data.frame(re$animal_id[, , "mufall_Intercept"]) %>%
+  mutate(animal_id = rownames(re$animal_id))
+
+## Year
+
+### Summer vs Spring
+
+par(mar = c(6, 5, 4, 5))
+
+with(year_summer, {
+  plot(Estimate, seq_along(year),
+       xlab = "Random intercept (log-odds)",
+       ylab = "Year",
+       main = "Year effects: Summer vs Spring",
+       pch = 19, yaxt = "n")
+  axis(2, at = seq_along(year), labels = year, las = 1)
+  segments(Q2.5, seq_along(year), Q97.5, seq_along(year))
+
+  # Secondary axis: number of occurrences
+  axis(4, at = seq_along(year), labels = year_counts[year], las = 1)
+  mtext("Number of occurrences", side = 4, line = 3)
+})
+
+### Fall vs Spring
+par(mar = c(6, 5, 4, 5))
+
+with(year_fall, {
+  plot(Estimate, seq_along(year),
+       xlab = "Random intercept (log-odds)",
+       ylab = "Year",
+       main = "Year effects: Fall vs Spring",
+       pch = 19, yaxt = "n")
+  axis(2, at = seq_along(year), labels = year, las = 1)
+  segments(Q2.5, seq_along(year), Q97.5, seq_along(year))
+
+  # Secondary axis
+  axis(4, at = seq_along(year), labels = year_counts[year], las = 1)
+  mtext("Number of occurrences", side = 4, line = 3)
+})
+
+### Individual
+
+### Summer vs Spring
+
+par(mar = c(6, 10, 4, 5))
+
+with(id_summer, {
+  plot(Estimate, seq_along(animal_id),
+       xlab = "Random intercept (log-odds)",
+       ylab = "Individual",
+       main = "Individual effects: Summer vs Spring",
+       pch = 19, yaxt = "n")
+  axis(2, at = seq_along(animal_id), las = 1, cex.axis = 0.6)
+  segments(Q2.5, seq_along(animal_id), Q97.5, seq_along(animal_id))
+
+  # Secondary axis
+  axis(4, at = seq_along(animal_id), labels = id_counts[animal_id], las = 1, cex.axis = 0.6)
+  mtext("Number of occurrences", side = 4, line = 3)
+})
+
+### Fall vs Spring
+
+par(mar = c(6, 10, 4, 5))
+
+with(id_fall, {
+  plot(Estimate, seq_along(animal_id),
+       xlab = "Random intercept (log-odds)",
+       ylab = "Individual",
+       main = "Individual effects: Fall vs Spring",
+       pch = 19, yaxt = "n")
+  axis(2, at = seq_along(animal_id), las = 1, cex.axis = 0.6)
+  segments(Q2.5, seq_along(animal_id), Q97.5, seq_along(animal_id))
+
+  # Secondary axis
+  axis(4, at = seq_along(animal_id), labels = id_counts[animal_id], las = 1, cex.axis = 0.6)
+  mtext("Number of occurrences", side = 4, line = 3)
+})
 
 
 
+```
 
+# Results Writing
 
+The strongest model included only arrival season for fixed effect, with individual and year as random effects. This model was close too the rest in elpd (\> 9 from the top model), but it had far better Pareto-k values (98.6% vs 78% good). It is also true that the simpler model is better when elpd is close. The simple model showed that arrival season predicted departure season. Fish that arrived in the spring were less likely to depart in the summer or fall. Fish arriving in the fall were more likely to depart in the fall (Figure 1). Many fish stayed for one or more years, so this is not a result of fish arriving and leaving right away. Year to year variation was significant and the largest of the effects. Some years strongly shifted towards spring and others fall, even in years with up to 17 departures (Figure 3). This model showed that individual fish was a significant factor in departure timing. Some fish are consistently more likely to depart early or late over as many as 9 occurrences. This variance is comparable in magnitude to the fixed effect.
 
-
-
-
-
-
-
-
+The second best model with summer flow anomalies also included many factors with biological relevance to the fish. Fish mass, days in system, and days after capture all failed to predict departure season. Even flow was not a good predictor. Figure 2 shows that summer flow anomaly does not significantly effect departure. While it appears that higher summer flows increase fall departures relative to spring, the confidence intervals cross zero, so this cannot be said for sure. The flow effects were also much smaller than the arrival season, annual, and individual effects. This difference in broad scale year effect and short-term seasonal flow anomalies shape departure timing.
