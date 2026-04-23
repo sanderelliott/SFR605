@@ -1,0 +1,151 @@
+---
+title: "SFR Preliminary Analysis"
+author: "Sander Elliott"
+date: "2026-04-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Prep
+
+## Raw Data
+
+```{r}
+SNShst <- read.csv("FinalProject/data/SNShst_allyrs.csv")
+SNSfsh <- read.csv("FinalProject/data/SNSfsh_allyrs.csv")
+glimpse(snshst) ## Detection history
+glimpse(snsfsh) ## Fish information
+```
+
+## Detection History
+
+```{r}
+## Remove columns for types of tags not used in analysis
+## Only keep telemetry detections
+SNSdetcln <- SNShst %>% 
+  filter(Event == "Detection") %>% 
+  dplyr::select(-Event, -Species, -tagtype, -SensorType, -avgSensorValue, -avgComputedValue, -Frequency, -avgPower,
+         -LocationCode, -AntennaID, -AltFishID)
+glimpse(SNSdetcln)
+
+```
+
+
+### Prep Glatos - Convert coordiantes and time
+
+```{r}
+detglat_sf <- SNSdetcln %>% 
+  mutate(
+    detection_timestamp_utc = as.POSIXct(LastTS),
+    transmitter_id = as.character(IDCode),
+    transmitter_codespace = as.character(TagId),
+    receiver_sn = RxID,
+    animal_id = FishID
+  ) %>% 
+  filter(!is.na(Easting)) %>% 
+  st_as_sf(coords = c("Easting", "Northing"), crs = 26919) %>%   # UTM 19N
+  st_transform(4326) %>%                                         # WGS84 lat/long
+  mutate(
+    deploy_long = st_coordinates(.)[,1],
+    deploy_lat  = st_coordinates(.)[,2]
+  ) %>% 
+  filter(deploy_lat < 45.1) ## some false detections way north
+
+glimpse(detglat_sf)
+```
+
+### Use GLATOS
+
+```{r}
+glat_events <- detection_events(glat_sf, location_col = "array", condense = TRUE) %>% 
+  mutate(m_leave = month(last_detection),
+         y_leave = year(last_detection), 
+         d_leave = yday(last_detection),
+         m_leave = month(last_detection),
+         y_arrive = year(first_detection),
+         d_arrive = yday(first_detection))
+glimpse(glat_events)
+```
+
+### Get Penobscot Departures
+
+```{r}
+penob_events <- glat_events %>%
+  arrange(animal_id, last_detection) %>% 
+  group_by(animal_id) %>%
+  mutate(is_last = row_number() == n()) %>%   # TRUE only for final row
+  filter(!(is_last & location == "penob_riv")) %>%  # drop only final penob_riv
+  dplyr::select(-is_last) %>%
+  ungroup() %>% 
+  filter(location == "penob_riv")
+
+```
+
+
+## Fish
+
+### Keep important data
+
+```{r}
+glimpse(SNSfsh)
+
+SNSfshcln <- SNSfsh %>% 
+  dplyr::select(FishID, TagID, CaptureDate, ForkLength, TotalLength, Mass, Recapture, InitialRelease, Sex)
+
+```
+
+### Prep fish for Join
+
+```{r}
+departfsh <- SNSfshcln %>% 
+  filter(FishID %in% depart_m$animal_id & InitialRelease == 1)%>%
+  rename(animal_id = FishID)
+```
+
+## Seasons
+
+### Join fish and detections
+
+```{r}
+depart_full <- penob_events %>%
+  left_join(departfsh, by = "animal_id") %>% 
+  mutate(CaptureDate = as.POSIXct(CaptureDate, format = "%Y-%m-%d %H:%M:%S"),
+         day_cap = as.numeric(difftime(last_detection, CaptureDate, units = "days")),
+         day_syst = res_time_sec/86400) %>% 
+  filter(day_syst > 2)
+glimpse(depart_full)
+```
+
+### Create Seasons
+
+```{r}
+depart_ssn <- depart_full %>% 
+  mutate(season = case_when(d_leave > 240 ~ "fall",
+                            d_leave < 136 ~ "spring",
+                            d_leave > 136 & d_leave < 240 ~ "summer"),
+         arrive_ssn = case_when(d_arrive >= 240 ~ "fall",
+                                d_arrive <= 136 ~ "spring",
+                                d_arrive > 136 & d_arrive < 240 ~ "summer")) %>% 
+  rename(year = y_leave)
+glimpse(depart_ssn)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

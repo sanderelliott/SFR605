@@ -73,8 +73,6 @@ ggplot(depart_m, aes(x = d_arrive)) +
     y = "Density"
   )
 
-depart_early <- depart_m %>% 
-  filter(d_leave < 240)
 
 ggplot(depart_early, aes(x = d_leave, y = y_leave)) +
   geom_point() +
@@ -82,10 +80,6 @@ ggplot(depart_early, aes(x = d_leave, y = y_leave)) +
   xlab("Departure Date") + 
   ylab("Year")
 
-depart_early[depart_early[,'d_leave'] == 136,]
-
-depart_spring <- depart_early %>% 
-  filter(d_leave < 136)
 
 ggplot(depart_spring, aes(x = d_leave)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
@@ -98,8 +92,7 @@ ggplot(depart_spring, aes(x = d_leave)) +
     y = "Density"
   )
 
-depart_summer <- depart_early %>% 
-  filter(d_leave > 136)
+
 
 ggplot(depart_summer, aes(x = d_leave)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
@@ -112,8 +105,6 @@ ggplot(depart_summer, aes(x = d_leave)) +
     y = "Density"
   )
 
-depart_fall <- depart_m %>% 
-  filter(d_leave > 240)
 
 ggplot(depart_fall, aes(x = d_leave)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
@@ -126,24 +117,11 @@ ggplot(depart_fall, aes(x = d_leave)) +
     y = "Density"
   )
 
-min(depart_spring$d_leave)
-max(depart_spring$d_leave)
-
-
-min(depart_summer$d_leave)
-max(depart_summer$d_leave)
-
-min(depart_fall$d_leave)
-max(depart_fall$d_leave)
-
-depart_ssn <- depart_m %>% 
-  mutate(season <- case_when())
 
 
 ## Fish in departures
 
-fish_depart <- SNSfshcln %>% 
-  filter(FishID %in% snsdep$animal_id)
+
 
 ggplot(snsdep, aes(x = ForkLength)) +
   geom_histogram(aes(y = ..density..), fill = "grey80", color = "white") +
