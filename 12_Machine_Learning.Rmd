@@ -73,8 +73,7 @@ cat("Observations removed:", nrow(soc_data) - nrow(soc_clean), "\n")
 
 How many observations have missing values? Which variables are affected? What assumption does listwise deletion make about the mechanism of missingness?
 
-19 observations had missing values. Clay content, sand content, and bulk density were affected. It assumes that missingness indicates that the value was not measured and that the whole row is impacted by that missing value. 
-
+19 observations had missing values. Clay content, sand content, and bulk density were affected. It assumes that missingness indicates that the value was not measured and that the whole row is impacted by that missing value.
 
 ## Response distribution
 
@@ -90,7 +89,7 @@ ggplot(soc_clean, aes(x = soc_pct)) +
 
 Describe the distribution of `soc_pct`. Is it symmetric? Random forests are generally robust to skewed responses — note any concerns but proceed without transformation for now.
 
-It is right skewed with many 0s. 
+It is right skewed with many 0s and some really high values. The percent in the high values is over 100% which is suspicious.
 
 ## Predictor relationships
 
@@ -105,9 +104,9 @@ soc_clean %>%
 
 From the pairs plot, identify: (a) one predictor that appears to have a strong relationship with `soc_pct`, and (b) two predictors that are correlated with each other. Note: correlated predictors are handled differently by random forests than by linear models. We will return to this when we discuss variable importance.
 
-a) bulk_density has a relationship with soc_pct
+a)  bulk_density has a relationship with soc_pct
 
-b) clay_pct and sand_pct are correlated, negatively. 
+b)  clay_pct and sand_pct are correlated, negatively.
 
 # Fitting a Random Forest
 
@@ -151,6 +150,16 @@ rf_fit
 
 Examine the `ranger` output. (a) What is the OOB prediction error (reported as MSE)? Convert it to RMSE and compare it to the standard deviation of `soc_pct` in the training set. A useful heuristic: RMSE / SD \< 0.5 suggests reasonable predictive skill. (b) What is the OOB R²? How does "out-of-bag" differ from a held-out test set as a means of assessing model performance?
 
+```{r}
+RSME <- sqrt(1911.415)
+RSME
+
+RSME/sd(train$soc_pct)
+```
+
+a.  The OOB prediction error is 1911.415. RSME is 43.71973. RSME / SD is 0.570038, so it fails the heuristic for reasonable predictive skill.
+b.  The OOB r2 is 0.6750602. The out of bag assesses the the fit of the training set. The held out set has not been used yet and is completely independent of the model itself.
+
 ## Hyperparameter tuning
 
 The default `mtry = 3` may not be optimal for this dataset. The code below performs a simple grid search over all possible `mtry` values, using OOB error to evaluate each.
@@ -184,7 +193,36 @@ data.frame(mtry = mtry_vals, oob_rmse = sqrt(oob_errors)) %>%
 
 ### Task 5
 
-(a) What is the optimal `mtry` based on OOB error? (b) Refit the random forest using the optimal `mtry`, storing it as `rf_fit_tuned`. Evaluate it on the test set and compare test R² and RMSE to the default model. How much does performance change? (c) Why is it acceptable to use OOB error for tuning `mtry` rather than needing a separate validation set?
+(a) What is the optimal `mtry` based on OOB error?
+
+Based on OOB error, the optimal mtry is 5.
+
+(b) Refit the random forest using the optimal `mtry`, storing it as `rf_fit_tuned`. Evaluate it on the test set and compare test R² and RMSE to the default model. How much does performance change?
+
+```{r}
+rf_fit_tuned <- ranger(
+  formula       = soc_pct ~ mat_c + map_mm + clay_pct + sand_pct + bulk_density,
+  data          = train,
+  num.trees     = 500,
+  mtry          = 5,
+  min.node.size = 5,
+  importance    = "permutation",
+  keep.inbag    = TRUE,
+  seed          = 605
+)
+rf_fit_tuned
+
+RSME <- sqrt(1774.167)
+RSME
+
+RSME/sd(train$soc_pct)
+```
+
+The performance is better, but the RSME/SD is still \> 0.5.
+
+(c) Why is it acceptable to use OOB error for tuning `mtry` rather than needing a separate validation set?
+
+It is acceptable because OOB acts like internal cross validation. It is computed from data not used in that tree and thus avoids some bias. The left out data is still available to use at the end.
 
 # Variable Importance
 
@@ -204,7 +242,13 @@ vip(rf_fit,
 
 ### Task 6
 
-Interpret the variable importance plot. (a) Which predictor has the highest importance? Does this match your expectation from the pairs plot (Task 3)? (b) `bulk_density` dominates both importance metrics. Is this ecologically meaningful, or does it suggest a potential problem? Consider: bulk density is known to be strongly negatively correlated with SOC (high organic matter soils tend to have low bulk density). Does this make bulk density a true *driver* of SOC, or more of a co-measurement of the same underlying property? Would you include it in a predictive model?
+Interpret the variable importance plot. (a) Which predictor has the highest importance? Does this match your expectation from the pairs plot (Task 3)?
+
+bulk_density is the most important. This matches my answer to Task 3 where I noted its apparent relationship wiht the response variable.
+
+(b) `bulk_density` dominates both importance metrics. Is this ecologically meaningful, or does it suggest a potential problem? Consider: bulk density is known to be strongly negatively correlated with SOC (high organic matter soils tend to have low bulk density). Does this make bulk density a true *driver* of SOC, or more of a co-measurement of the same underlying property? Would you include it in a predictive model?
+
+This fact leads me to believe that bulk_density is more of a co-measurment, so it is not well suited to predictive modeling or too well suited but misleading.
 
 ## Impurity-based importance
 
@@ -242,6 +286,8 @@ data.frame(
 
 Do the two importance methods agree? If they disagree for any predictor, which method do you trust more and why? Note: impurity-based importance is known to be biased toward high-cardinality continuous variables (i.e., variables with a high percentage of unique values). Does that explain any discrepancy you see?
 
+They generally agree on the order of predictors with bulk_density dominating. The permutation and impurity values are slightly different. In this case I would trust permutation based importance as the dataset is skewed with some unique values.
+
 # Partial Dependence Plots
 
 Variable importance tells us *that* a predictor matters, but not *how*. Partial dependence plots (PDPs) show the marginal effect of one predictor on the response, averaged over all other predictors. Note that `pdp::partial()` must be called with the package prefix since `purrr` (loaded as part of `tidyverse`) also has a `partial()` function.
@@ -262,7 +308,41 @@ autoplot(pdp_top, smooth = TRUE) +
 
 ### Task 8
 
-Using the code above as a template, make PDP plots for two more predictors of your choice. For each of the three PDPs (including bulk density): (a) describe the shape of the relationship (linear, unimodal, threshold, etc.), and (b) describe where uncertainty is widest and why that might be.
+Using the code above as a template, make PDP plots for two more predictors of your choice. For each of the three PDPs (including bulk density):
+
+```{r}
+pdp_top <- pdp::partial(
+  rf_fit,
+  pred.var        = "clay_pct",
+  train           = train,
+  grid.resolution = 30
+)
+
+autoplot(pdp_top, smooth = TRUE) +
+  labs(x = "Clay Percentage", y = "Predicted SOC (%)",
+       title = "Partial dependence: Clay Percentace vs. SOC") +
+  theme_minimal()
+
+pdp_top <- pdp::partial(
+  rf_fit,
+  pred.var        = "sand_pct",
+  train           = train,
+  grid.resolution = 30
+)
+
+autoplot(pdp_top, smooth = TRUE) +
+  labs(x = "Sand Percentage", y = "Predicted SOC (%)",
+       title = "Partial dependence: sand percentage vs. SOC") +
+  theme_minimal()
+```
+
+(a) describe the shape of the relationship (linear, unimodal, threshold, etc.), and
+
+bulk density: non linear and convex. sand percentage: linear. outside of extreme low decreases at a linear rate. clay percentage: plateau, falls then holds.
+
+(b) describe where uncertainty is widest and why that might be.
+
+bulk density: uncertainty is highest at low values \< 0.5. sand percentage: high at low values \< 25. localized uncertainty at medium values. \~30 and \~60 clay percentage: uncertainty at low values \< 15.
 
 ## Two-way interaction PDP
 
@@ -288,6 +368,25 @@ ggplot(pdp_2d, aes(x = mat_c, y = map_mm, fill = yhat)) +
 ### Task 9
 
 Using the two-way PDP above as a template, generate a two-way PDP for `bulk_density` and `mat_c`. Does the effect of bulk density on SOC appear to depend on temperature, or is it consistent across the temperature gradient?
+
+```{r}
+pdp_2d <- pdp::partial(
+  rf_fit,
+  pred.var        = c("bulk_density", "mat_c"),
+  train           = train,
+  grid.resolution = 20
+)
+
+ggplot(pdp_2d, aes(x = bulk_density, y = mat_c, fill = yhat)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#378ADD", mid = "white", high = "#D85A30",
+                       midpoint = median(pdp_2d$yhat)) +
+  labs(x = "Bulk density (g/cm³)", y = "Mean annual temperature (°C)",
+       fill = "Predicted\nSOC (%)", title = "Two-way partial dependence: Bulk Density  × MAT") +
+  theme_minimal()
+```
+
+It does not look like the effect of bulk density is dependent on air temperature. By far the most variation is along the x axis. Temperature may have a slight effect at high bulk density.
 
 # Evaluating on the Test Set
 
@@ -320,7 +419,13 @@ p_rf_obs
 
 ### Task 10
 
-(a) Compare the test set R² to the OOB R² from the model fit above. Are they similar? If the test R² is substantially lower, what might explain the gap? (b) Are there systematic patterns in the residuals, i.e., does the model consistently over- or under-predict at certain SOC values?
+(a) Compare the test set R² to the OOB R² from the model fit above. Are they similar? If the test R² is substantially lower, what might explain the gap?
+
+The test R2 is significantly lower, 0.460 vs 0.698. This gap could be due to the fact that the OOB R2 is predicted from inside the training set, leading to a slighty improved/inflated R2.
+
+(b) Are there systematic patterns in the residuals, i.e., does the model consistently over- or under-predict at certain SOC values?
+
+The model predicts above and below the 1:1 line. There are more overpredictions at low SOC and more underpredictions at high SOC values.
 
 # Comparison to a Linear Mixed Model
 
@@ -361,7 +466,17 @@ p_rf_obs + p_lmm_obs +
 
 ### Task 11
 
-(a) What is the test set performance of each model? (b) Do LMM assumptions appear to be met based on your exploration of the data above? (c) Under what circumstances might you choose the RF over the LMM, or vice versa? Note: the regularization that keeps the LMM from overfitting (REML shrinkage on random effects) is analogous to the regularization penalty in LASSO/ridge regression. The random forest achieves implicit regularization through bagging and random feature selection.
+(a) What is the test set performance of each model?
+
+Random Forest: better at RMSE: 34.847 \| R²: 0.460 Linear LMM: Slightly worse at RMSE: 44.914 \| R²: 0.409
+
+(b) Do LMM assumptions appear to be met based on your exploration of the data above?
+
+LMM assumptions are not met. Task 8 showed that the relationship between some variables are non linear. Also, clay and sand are highly correlated.
+
+(c) Under what circumstances might you choose the RF over the LMM, or vice versa? Note: the regularization that keeps the LMM from overfitting (REML shrinkage on random effects) is analogous to the regularization penalty in LASSO/ridge regression. The random forest achieves implicit regularization through bagging and random feature selection.
+
+With this note in mind, I would choose RF when I suspect more non linear relationships and want the best test set performance. I might choose LMM when I want to understand predictor relationships with more certainty, but that may be due to my relative lack of experience with RF.
 
 # SHAP Values
 
@@ -430,6 +545,8 @@ sv_importance(shap_rf, kind = "bar", fill = "#378ADD") +
 
 Compare this SHAP importance ranking to the permutation importance ranking from Task 6. Do they agree? If any predictors change rank substantially, note which ones and suggest why. Think about how correlated predictors are handled differently by permutation importance vs. SHAP.
 
+mat_c is far more important with the shapely values than for permutation importance. Sand_pct in turn moves far down in importance with SHAP values. As previously noted, clay and sand pct are correlated. Because SHAP handles correlated predictors better, it better separates the two and allows mat_c to show as a better predictor. 
+
 ## SHAP beeswarm plot
 
 The beeswarm plot shows both importance and the direction of each predictor's effect. Each dot is one observation; position on the x-axis is the SHAP value; color encodes the predictor's actual value (red = high, blue = low). Dots to the right indicate that variable increased the prediction for that observation; dots to the left indicate it decreased the prediction. Red dots on the right indicate a positive relationship; blue dots on the right indicate a negative relationship. Wide horizontal spread means that predictor's effect varies a lot across observations.
@@ -443,6 +560,21 @@ sv_importance(shap_rf, kind = "beeswarm", alpha = 0.5) +
 ### Task 13
 
 Using `sv_importance()` with `kind = "beeswarm"`, generate the equivalent beeswarm plot for the `xgboost` model (`shap_xgb` is already computed above). Use `patchwork` to place both plots side by side, then describe any differences in the direction or magnitude of effects between the two models.
+
+```{r}
+p_rf <- sv_importance(shap_rf, kind = "beeswarm", alpha = 0.5) +
+  labs(title = "SHAP beeswarm — Random Forest") +
+  theme_minimal()
+
+p_xgb <- sv_importance(shap_xgb, kind = "beeswarm", alpha = 0.5) +
+  labs(title = "SHAP beeswarm — XGBoost") +
+  theme_minimal()
+
+p_rf / p_xgb
+
+```
+
+Sand and clay percentage have different groupings between the two models. In the XGBoost they have far more magnitude than the base. 
 
 # Local Interpretation
 
@@ -472,7 +604,30 @@ print(test[low_soc_i, predictors])
 
 ### Task 14
 
-(a) For each waterfall plot, which predictors contributed to pushing the prediction above the baseline vs. below? (b) Choose two intermediate SOC points from the dataset and make waterfall plots for them. How do the predictor contributions compare with the high and low SOC waterfall plots?
+(a) For each waterfall plot, which predictors contributed to pushing the prediction above the baseline vs. below? 
+
+bulk density was the most responsible for pushing the predictions. With low bulk densities pushing it up and high pushing it down. The high SOC was pushed next by mat_c. The low was pushed by sand_pct and then mat_c. 
+
+(b) Choose two intermediate SOC points from the dataset and make waterfall plots for them. How do the predictor contributions compare with the high and low SOC waterfall plots?
+
+```{r}
+ord <- order(test_preds2)
+
+mid1_i <- ord[round(length(ord) * 0.4)]   
+mid2_i <- ord[round(length(ord) * 0.6)]   
+
+
+
+sv_waterfall(shap_rf_test, row_id = mid1_i) +
+  labs(title = "Why did the model predict Medium Low SOC here?") +
+  theme_minimal()
+
+sv_waterfall(shap_rf_test, row_id = mid2_i) +
+  labs(title = "Why did the model predict Medium High SOC here?") +
+  theme_minimal()
+```
+
+These medium values have more complex predictor relationships. bulk_density still dominates, but the other predictors are responsible for much more of the predicted SOC. clay_pct, sand_pct, and mat_c have proportionally large effects. 
 
 ## Force plot
 
@@ -487,6 +642,14 @@ sv_force(shap_rf_test, row_id = high_soc_i) +
 ### Task 15
 
 Generate the force plot for the low-SOC observation. Which format (waterfall or force) do you find more intuitive for communicating results to a non-technical audience such as a land manager? Which would you include in a scientific paper?
+
+```{r}
+sv_force(shap_rf_test, row_id = low_soc_i) +
+  labs(title = "Force plot — high SOC observation") +
+  theme_minimal()
+```
+
+I would use force plots for a non a non-technical audience. I feel they demonstrate a push and pull in an intuitive way. I would consider both for a scientific paper, but I would lean towards the waterfall plot. I feel it conveys more the more you look at it. 
 
 # SHAP Dependence Plots vs. Partial Dependence Plots
 
@@ -522,7 +685,57 @@ p_pdp + p_shap +
 
 ### Task 16
 
-Following the example above for `mat_c`, generate a side-by-side PDP and SHAP dependence plot for `bulk_density`. (a) Do the two methods show the same general shape? (b) Color the SHAP dependence plot by `mat_c`. Does the effect of bulk density appear to vary with temperature? Describe any interaction pattern you see and suggest an ecological mechanism.
+Following the example above for `mat_c`, generate a side-by-side PDP and SHAP dependence plot for `bulk_density`. 
+
+```{r}
+pdp_bd <- pdp::partial(
+  rf_fit,
+  pred.var = "bulk_density",
+  train = train,
+  grid.resolution = 40
+)
+
+p_pdp_bd <- autoplot(pdp_bd, smooth = TRUE) +
+  labs(
+    x = "Bulk density (g/cm³)",
+    y = "Predicted SOC (%)",
+    title = "Partial dependence plot — bulk density"
+  ) +
+  theme_minimal()
+
+p_shap_bd <- sv_dependence(
+  shap_rf,
+  v = "bulk_density",
+  color_var = NULL
+) +
+  labs(
+    x = "Bulk density (g/cm³)",
+    y = "SHAP value for bulk density",
+    title = "SHAP dependence — bulk density"
+  ) +
+  theme_minimal()
+
+p_pdp_bd + p_shap_bd +
+  plot_annotation(title = "PDP vs. SHAP dependence for bulk density")
+
+
+```
+
+
+(a) Do the two methods show the same general shape? 
+
+Yes. 
+
+(b) Color the SHAP dependence plot by `mat_c`. Does the effect of bulk density appear to vary with temperature? Describe any interaction pattern you see and suggest an ecological mechanism.
+
+```{r}
+sv_dependence(shap_rf, v = "bulk_density", color_var = "mat_c") +
+  labs(x = "Bulk Denstiy", y = "SHAP value for Bulk density",
+       title = "SHAP dependence: bulk density (colored by MAT)") +
+  theme_minimal()
+```
+
+I cannot see a relationship between bulk density and mat_c. It would make sense that temprature would effect the relationship between bulk density and soil organic carbon given that temperature affects the rate of chemical processes, but I can't see it in this plot. 
 
 # Cross-Model Comparison
 
@@ -553,6 +766,10 @@ data.frame(
 
 Do the two models agree on which predictors are most important? Identify any predictors ranked substantially differently across models. When would you be *more* concerned about algorithmic instability?
 
+They both rank the predictors similarly, with the exception of sand_pct and mat_c. I would be more concerned about algarithmic instability if the larger predictors were ranked differently. 
+
+
+
 # Limitations and Responsible Use of SHAP
 
 Because `kernelshap` is an approximation, SHAP values have some variance across runs. The code below demonstrates this by refitting the random forest with a different random seed and comparing SHAP values for a single observation.
@@ -582,4 +799,94 @@ data.frame(
 
 ### Task 18
 
-The table above compares SHAP values for a single observation across two random forest fits that differ only in their random seed. (a) How large are the differences? Are they ecologically meaningful? (b) Implement a robustness check: refit the random forest three more times with seeds 111, 222, and 333. For each fit, compute SHAP values on the training set and extract the SHAP value for `bulk_density` for observation 1. Report the mean and standard deviation across all five fits (including seeds 605 and 999). Are there any conclusions you can be confident about?
+The table above compares SHAP values for a single observation across two random forest fits that differ only in their random seed. 
+(a) How large are the differences? Are they ecologically meaningful? 
+
+The differences are small and not ecologically meaningful. 
+
+(b) Implement a robustness check: refit the random forest three more times with seeds 111, 222, and 333. For each fit, compute SHAP values on the training set and extract the SHAP value for `bulk_density` for observation 1. Report the mean and standard deviation across all five fits (including seeds 605 and 999). Are there any conclusions you can be confident about?
+
+```{r}
+
+rf_fit3 <- ranger(
+  formula       = soc_pct ~ mat_c + map_mm + clay_pct + sand_pct + bulk_density,
+  data          = train,
+  num.trees     = 500,
+  mtry          = 3,
+  min.node.size = 5,
+  keep.inbag    = TRUE,
+  seed          = 111
+)
+
+ks_rf3   <- kernelshap(rf_fit3, X = train[, predictors], bg_X = train[, predictors])
+shap_rf3 <- shapviz(ks_rf3)
+
+data.frame(
+  predictor    = predictors,
+  shap_seed605 = shap_rf$S[1, predictors],
+  shap_seed111 = shap_rf3$S[1, predictors]
+) %>%
+  mutate(difference = shap_seed605 - shap_seed111) %>%
+  arrange(desc(abs(difference)))
+
+rf_fit4 <- ranger(
+  formula       = soc_pct ~ mat_c + map_mm + clay_pct + sand_pct + bulk_density,
+  data          = train,
+  num.trees     = 500,
+  mtry          = 3,
+  min.node.size = 5,
+  keep.inbag    = TRUE,
+  seed          = 222
+)
+
+ks_rf4   <- kernelshap(rf_fit4, X = train[, predictors], bg_X = train[, predictors])
+shap_rf4 <- shapviz(ks_rf4)
+
+data.frame(
+  predictor    = predictors,
+  shap_seed605 = shap_rf$S[1, predictors],
+  shap_seed222 = shap_rf4$S[1, predictors]
+) %>%
+  mutate(difference = shap_seed605 - shap_seed222) %>%
+  arrange(desc(abs(difference)))
+
+rf_fit5 <- ranger(
+  formula       = soc_pct ~ mat_c + map_mm + clay_pct + sand_pct + bulk_density,
+  data          = train,
+  num.trees     = 500,
+  mtry          = 3,
+  min.node.size = 5,
+  keep.inbag    = TRUE,
+  seed          = 333
+)
+
+ks_rf5   <- kernelshap(rf_fit5, X = train[, predictors], bg_X = train[, predictors])
+shap_rf5 <- shapviz(ks_rf5)
+
+data.frame(
+  predictor    = predictors,
+  shap_seed605 = shap_rf$S[1, predictors],
+  shap_seed333 = shap_rf5$S[1, predictors]
+) %>%
+  mutate(difference = shap_seed605 - shap_seed333) %>%
+  arrange(desc(abs(difference)))
+
+bd_shap_values <- c(
+  shap_rf$S[1, "bulk_density"],   # seed 605
+  shap_rf2$S[1, "bulk_density"],  # seed 999
+  shap_rf3$S[1, "bulk_density"],  # seed 111
+  shap_rf4$S[1, "bulk_density"],  # seed 222
+  shap_rf5$S[1, "bulk_density"]   # seed 333
+)
+
+bd_shap_values
+
+mean_bd <- mean(bd_shap_values)
+sd_bd   <- sd(bd_shap_values)
+
+mean_bd
+sd_bd
+
+
+```
+the SHAP value for bulk density for observtion one is stable. The random seed is not responsible for the interpetation of the relationship between bulk sensity and soil organic carbon. 
