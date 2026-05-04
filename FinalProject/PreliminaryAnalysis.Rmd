@@ -313,8 +313,8 @@ fit_simp <- brm(
   season ~ arrive_ssn + (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
-  prior = priors,   # the ones we already built
-  chains = 4, cores = 4, iter = 6000,
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
   control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
@@ -323,29 +323,36 @@ fit_spring_z <- brm(
     (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
-  chains = 4, iter = 6000, cores = 4,
-  control = list(adapt_delta = 0.99)
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
-summary(fit_spring_z)
+#summary(fit_spring_z)
 
 fit_summer_z <- brm(
   season ~ summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
     (1 | animal_id) + (1 | year),
-  data = snsdep,
-  family = categorical()
+ data = snsdep,
+  family = categorical(),
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
-summary(fit_summer_z)
+#summary(fit_summer_z)
 
 fit_fall_z <- brm(
   season ~ fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
     (1 | animal_id) + (1 | year),
-  data = snsdep,
-  family = categorical()
+ data = snsdep,
+  family = categorical(),
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
-summary(fit_fall_z)
+#summary(fit_fall_z)
 
 loo(fit_spring_z, fit_summer_z, fit_fall_z)
 
@@ -355,7 +362,10 @@ fit_spring_summer_z <- brm(
   season ~ spring_flow_z * summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
     (1 | animal_id) + (1 | year),
   data = snsdep,
-  family = categorical()
+  family = categorical(),
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
 
@@ -363,17 +373,31 @@ fit_spring_fall_z <- brm(
   season ~ spring_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
     (1 | animal_id) + (1 | year),
   data = snsdep,
-  family = categorical()
+  family = categorical(),
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
 fit_summer_fall_z <- brm(
   season ~ summer_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
     (1 | animal_id) + (1 | year),
   data = snsdep,
-  family = categorical()
+  family = categorical(),
+  prior = priors,   
+  chains = 3, cores = 3, iter = 2000, warmup = 1000,
+  control = list(adapt_delta = 0.99, max_treedepth = 15)
 )
 
 ```
+
+## Trace Plots
+
+```{r}
+plot(fit_simp)
+
+```
+
 
 ## Compare Models
 
