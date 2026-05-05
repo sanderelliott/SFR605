@@ -404,7 +404,7 @@ plot(fit_summer_z)
 
 ```{r}
 summary(fit_simp) ## best overall
-summary(fit_summer_z) ## best with variables
+summary(fit_summer_fall_z) ## best with variables
 ```
 
 ## Arrival season (Figure 1)

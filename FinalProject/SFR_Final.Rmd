@@ -52,20 +52,21 @@ SNSdetcln <- SNShst %>%
 ```{r}
 detglat_sf <- SNSdetcln %>% 
   mutate(
-    detection_timestamp_utc = as.POSIXct(LastTS),
+    detection_timestamp_utc = as.POSIXct(LastTS, format = "%m/%d/%Y %H:%M"),
     transmitter_id = as.character(IDCode),
     transmitter_codespace = as.character(TagId),
     receiver_sn = RxID,
     animal_id = FishID
   ) %>% 
   filter(!is.na(Easting)) %>% 
-  st_as_sf(coords = c("Easting", "Northing"), crs = 26919) %>%   # UTM 19N
-  st_transform(4326) %>%                                         # WGS84 lat/long
+  st_as_sf(coords = c("Easting", "Northing"), crs = 26919) %>%   
+  st_transform(4326) %>%                                         
   mutate(
     deploy_long = st_coordinates(.)[,1],
     deploy_lat  = st_coordinates(.)[,2]
   ) %>% 
-  filter(deploy_lat < 45.1) ## some false detections way north
+  filter(deploy_lat < 45.1)
+
 
 glat_sf <- detglat_sf %>% 
   mutate(array = case_when(deploy_lat < 44.49 & deploy_long > -69.2 ~ 
@@ -299,7 +300,8 @@ seasonal_means <- season_dat %>%
 
 ```{r}
 seasonal_plot <- seasonal_means %>% 
-  mutate(season = factor(season, levels = c("spring", "summer", "fall")))
+  mutate(season = factor(season, levels = c("spring", "summer", "fall"))) %>% 
+  filter(year > 2004)
 
 png("outputs/usgs_flow.png", width = 2000, height = 1500, res = 300)
   
@@ -440,7 +442,7 @@ fit_simp <- brm(
   chains = 3, cores = 3, iter = 2000, warmup = 1000)
 
 fit_spring_z <- brm(
-  season ~ spring_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ spring_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
@@ -451,7 +453,7 @@ fit_spring_z <- brm(
 #summary(fit_spring_z)
 
 fit_summer_z <- brm(
-  season ~ summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ summer_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
  data = snsdep,
   family = categorical(),
@@ -462,7 +464,7 @@ fit_summer_z <- brm(
 #summary(fit_summer_z)
 
 fit_fall_z <- brm(
-  season ~ fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ fall_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
  data = snsdep,
   family = categorical(),
@@ -476,7 +478,7 @@ fit_fall_z <- brm(
 
 
 fit_spring_summer_z <- brm(
-  season ~ spring_flow_z * summer_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ spring_flow_z * summer_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
@@ -486,7 +488,7 @@ fit_spring_summer_z <- brm(
 
 
 fit_spring_fall_z <- brm(
-  season ~ spring_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ spring_flow_z * fall_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
@@ -495,7 +497,7 @@ fit_spring_fall_z <- brm(
 )
 
 fit_summer_fall_z <- brm(
-  season ~ summer_flow_z * fall_flow_z + arrive_ssn + Mass + day_cap + day_syst +
+  season ~ summer_flow_z * fall_flow_z + arrive_ssn + Mass + 
     (1 | animal_id) + (1 | year),
   data = snsdep,
   family = categorical(),
@@ -511,7 +513,6 @@ fit_summer_fall_z <- brm(
 loo(fit_simp, fit_spring_z, fit_summer_z, fit_fall_z, fit_spring_summer_z, fit_spring_fall_z,
     fit_summer_fall_z)
 
-final_table
 ```
 
 
@@ -585,7 +586,7 @@ plot(fit_simp)
 ## Arrival season
 
 ```{r}
-coefs <- summary(fit_simp)$fixed
+coefs <- summary(fit_summer_fall_z)$fixed
 
 # Keep only arrival-season effects
 arrive_coefs <- coefs[grep("arrive_ssn", rownames(coefs)), ]
@@ -608,8 +609,8 @@ y <- k:1
 ### Figure 4
 
 ```{r}
-png("outputs/arrival_effects.png", width = 2000, height = 2000, res = 300)
-par(mar = c(6, 15, 4, 2))
+png("outputs/arrival_effects.png", width = 2000, height = 1500, res = 300)
+par(mar = c(6, 15, 5, 2))
 plot(arrive_coefs[, "Estimate"], y,
      xlab = "Effect on log-odds (vs spring)",
      ylab = "",
@@ -756,6 +757,12 @@ with(id_fall, {
 })
 
 dev.off()
+
+```
+
+```{r}
+conditional_effects(fit_simp, categorical = TRUE) 
+conditional_effects(fit_summer_fall_z, categorical = TRUE) 
 
 ```
 
