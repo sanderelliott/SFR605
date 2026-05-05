@@ -199,7 +199,7 @@ d_time
 #### Figure 1
 
 ```{r}
-png("outputs/map_time.png", width = 2000, height = 1000, res = 300)
+png("outputs/map_time.png", width = 2700, height = 1000, res = 300)
 
 (d_map | d_time) +
   theme(legend.position = "right")
